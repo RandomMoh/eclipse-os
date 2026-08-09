@@ -116,7 +116,7 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
     tmux \
     zsh \
     htop \
-    fastfetch \
+    neofetch \
     curl \
     wget \
     git \
