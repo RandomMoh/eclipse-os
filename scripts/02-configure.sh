@@ -199,25 +199,47 @@ mkdir -p "$ROOTFS/usr/local/bin"
 cp "$PROJECT_ROOT/src/eclipse-sysinfo" "$ROOTFS/usr/local/bin/"
 cp "$PROJECT_ROOT/src/eclipse-control" "$ROOTFS/usr/local/bin/"
 cp "$PROJECT_ROOT/src/eclipse-installer" "$ROOTFS/usr/local/bin/"
-chmod +x "$ROOTFS/usr/local/bin/eclipse-sysinfo" \
-         "$ROOTFS/usr/local/bin/eclipse-control" \
-         "$ROOTFS/usr/local/bin/eclipse-installer"
+# Create desktop launchers for Eclipse Utilities
+mkdir -p "$ROOTFS/usr/share/applications"
+cat <<'EOF' > "$ROOTFS/usr/share/applications/eclipse-sysinfo.desktop"
+[Desktop Entry]
+Version=1.0
+Name=Eclipse SysInfo
+Comment=Display system metrics and Eclipse OS specs
+Exec=xfce4-terminal -e eclipse-sysinfo
+Icon=utilities-system-monitor
+Terminal=false
+Type=Application
+Categories=System;Utility;
+EOF
 
-echo -e "${BLUE}[+] Provisioning live user 'eclipse'...${RESET}"
-if ! chroot "$ROOTFS" id -u eclipse &>/dev/null; then
-    chroot "$ROOTFS" useradd -m -s /bin/bash eclipse
-fi
-echo "eclipse:eclipse" | chroot "$ROOTFS" chpasswd
+cat <<'EOF' > "$ROOTFS/usr/share/applications/eclipse-installer.desktop"
+[Desktop Entry]
+Version=1.0
+Name=Eclipse OS Installer
+Comment=Install Eclipse OS to target disk
+Exec=xfce4-terminal -e "sudo eclipse-installer"
+Icon=system-software-install
+Terminal=false
+Type=Application
+Categories=System;Installer;
+EOF
 
-for g in sudo video audio plugdev netdev; do
-    chroot "$ROOTFS" groupadd -f "$g"
-    chroot "$ROOTFS" usermod -aG "$g" eclipse
+# Copy shortcuts to Desktop directory for skeleton and live user
+mkdir -p "$ROOTFS/etc/skel/Desktop"
+for launcher in zen-browser.desktop kate.desktop code.desktop eclipse-sysinfo.desktop eclipse-installer.desktop; do
+    if [[ -f "$ROOTFS/usr/share/applications/$launcher" ]]; then
+        cp "$ROOTFS/usr/share/applications/$launcher" "$ROOTFS/etc/skel/Desktop/"
+        chmod +x "$ROOTFS/etc/skel/Desktop/$launcher"
+    fi
 done
 
-# Copy XFCE desktop configuration to live user home directory if created
+# Copy XFCE desktop configuration and Desktop shortcuts to live user home directory if created
 if [[ -d "$ROOTFS/home/eclipse" ]]; then
-    mkdir -p "$ROOTFS/home/eclipse/.config"
+    mkdir -p "$ROOTFS/home/eclipse/.config" "$ROOTFS/home/eclipse/Desktop"
     cp -r "$PROJECT_ROOT/config/xfce/"* "$ROOTFS/home/eclipse/.config/"
+    cp -r "$ROOTFS/etc/skel/Desktop/"* "$ROOTFS/home/eclipse/Desktop/" 2>/dev/null || true
+    chmod +x "$ROOTFS/home/eclipse/Desktop/"*.desktop 2>/dev/null || true
     chroot "$ROOTFS" chown -R eclipse:eclipse /home/eclipse
 fi
 
