@@ -30,4 +30,4 @@ else
 fi
 
 echo -e "${BLUE}[+] Launching Eclipse OS inside QEMU (1920x1080 display mode)...${RESET}"
-qemu-system-x86_64 $KVM_ARG -m 4096 -smp 4 -vga virtio -display gtk,zoom-to-fit=off -g 1920x1080 -cdrom "$ISO_PATH" -boot d
+qemu-system-x86_64 $KVM_ARG -m 4096 -smp 4 -vga virtio -display gtk -g 1920x1080 -cdrom "$ISO_PATH" -boot d
