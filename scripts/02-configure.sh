@@ -61,6 +61,15 @@ EOF
 echo -e "${YELLOW}[*] Updating APT package lists inside chroot...${RESET}"
 chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get update
 
+# Add Microsoft VS Code repository
+chroot "$ROOTFS" bash -c "
+  apt-get install -y --no-install-recommends curl gpg ca-certificates apt-transport-https
+  mkdir -p /etc/apt/keyrings
+  curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/keyrings/packages.microsoft.gpg
+  echo 'deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main' > /etc/apt/sources.list.d/vscode.list
+  apt-get update
+"
+
 echo -e "${YELLOW}[*] Installing required packages inside chroot...${RESET}"
 chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     linux-image-amd64 \
@@ -88,7 +97,32 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
     e2fsprogs \
     grub-efi-amd64-bin \
     grub-pc-bin \
-    xfce4-terminal
+    xfce4-terminal \
+    kate \
+    apache2 \
+    php \
+    php-cli \
+    php-mbstring \
+    php-xml \
+    php-curl \
+    php-mysql \
+    php-zip \
+    mariadb-server \
+    composer \
+    nodejs \
+    npm \
+    neovim \
+    vlc \
+    tmux \
+    zsh \
+    htop \
+    fastfetch \
+    curl \
+    wget \
+    git \
+    gpg \
+    apt-transport-https \
+    code
 
 echo -e "${BLUE}[+] Provisioning desktop assets and configuration...${RESET}"
 # GTK Theme
