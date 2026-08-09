@@ -124,6 +124,40 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
     apt-transport-https \
     code
 
+echo -e "${BLUE}[+] Installing Zen Browser into /opt/zen...${RESET}"
+mkdir -p "$ROOTFS/opt/zen"
+curl -fsSL -o "$ROOTFS/tmp/zen.linux-x86_64.tar.xz" "https://github.com/zen-browser/desktop/releases/latest/download/zen.linux-x86_64.tar.xz" || \
+curl -fsSL -o "$ROOTFS/tmp/zen.linux-x86_64.tar.xz" "https://github.com/zen-browser/desktop/releases/download/1.0.1-a.3/zen.linux-x86_64.tar.xz"
+
+tar -xf "$ROOTFS/tmp/zen.linux-x86_64.tar.xz" -C "$ROOTFS/opt/"
+rm -f "$ROOTFS/tmp/zen.linux-x86_64.tar.xz"
+
+mkdir -p "$ROOTFS/usr/local/bin"
+ln -sf /opt/zen/zen "$ROOTFS/usr/local/bin/zen-browser"
+chmod +x "$ROOTFS/opt/zen/zen" 2>/dev/null || true
+
+mkdir -p "$ROOTFS/usr/share/applications"
+cat <<'EOF' > "$ROOTFS/usr/share/applications/zen-browser.desktop"
+[Desktop Entry]
+Version=1.0
+Name=Zen Browser
+Comment=Experience tranquility while browsing the web
+Exec=/usr/local/bin/zen-browser %u
+Terminal=false
+Type=Application
+Icon=/opt/zen/browser/chrome/icons/default/default128.png
+Categories=Network;WebBrowser;
+MimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;
+EOF
+
+mkdir -p "$ROOTFS/etc/skel/.config"
+cat <<'EOF' > "$ROOTFS/etc/skel/.config/mimeapps.list"
+[Default Applications]
+text/html=zen-browser.desktop
+x-scheme-handler/http=zen-browser.desktop
+x-scheme-handler/https=zen-browser.desktop
+EOF
+
 echo -e "${BLUE}[+] Provisioning desktop assets and configuration...${RESET}"
 # GTK Theme
 mkdir -p "$ROOTFS/usr/share/themes/Eclipse-Dark"
