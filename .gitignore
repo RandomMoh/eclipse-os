@@ -1,0 +1,11 @@
+# Build workspace and ISO output
+build/
+*.iso
+*.squashfs
+
+# Temporary files
+*.tmp
+*.log
+__pycache__/
+*.pyc
+.DS_Store
