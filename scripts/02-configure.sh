@@ -65,7 +65,7 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get update
 chroot "$ROOTFS" bash -c "
   apt-get install -y --no-install-recommends curl gpg ca-certificates apt-transport-https
   mkdir -p /etc/apt/keyrings
-  curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/keyrings/packages.microsoft.gpg
+  curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --yes --dearmor -o /etc/apt/keyrings/packages.microsoft.gpg
   echo 'deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main' > /etc/apt/sources.list.d/vscode.list
   apt-get update
 "
