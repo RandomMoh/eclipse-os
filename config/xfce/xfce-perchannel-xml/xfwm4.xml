@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<channel name="xfwm4" version="1.0">
+  <property name="general" type="empty">
+    <property name="theme" type="string" value="Eclipse-Dark"/>
+    <property name="title_alignment" type="string" value="center"/>
+    <property name="active_text_color" type="string" value="#8B5CF6"/>
+    <property name="inactive_text_color" type="string" value="#94A3B8"/>
+    <property name="button_layout" type="string" value="O|HMC"/>
+    <property name="title_font" type="string" value="Sans Bold 10"/>
+    <property name="box_resize" type="bool" value="false"/>
+    <property name="double_click_action" type="string" value="maximize"/>
+    <property name="show_app_icon" type="bool" value="true"/>
+    <property name="use_compositing" type="bool" value="true"/>
+  </property>
+</channel>

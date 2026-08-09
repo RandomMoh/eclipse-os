@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=X-GNOME-Metatheme
+Name=Eclipse-Dark
+Comment=Eclipse OS Dark GTK3 Theme
+Encoding=UTF-8
+GtkTheme=Eclipse-Dark
+IconTheme=Adwaita
+MetacityTheme=Eclipse-Dark
+X-GNOME-Metatheme-Name=Eclipse-Dark
+
+[X-GNOME-Metatheme]
+GtkTheme=Eclipse-Dark
+MetacityTheme=Eclipse-Dark
+IconTheme=Adwaita
+ButtonLayout=close,minimize,maximize:

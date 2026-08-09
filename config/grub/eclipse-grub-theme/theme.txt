@@ -1,0 +1,45 @@
+# Eclipse OS GRUB Theme - Syzygy v1.0
+
+desktop-color: "#0B0D14"
+title-text: "Eclipse OS v1.0 (Syzygy)"
+title-font: "Sans Regular 24"
+title-color: "#8B5CF6"
+title-left: 0%
+title-top: 15%
+title-width: 100%
+title-align: "center"
+
++ boot_menu {
+    left = 25%
+    top = 35%
+    width = 50%
+    height = 40%
+    item_font = "Sans Regular 16"
+    item_color = "#E2E8F0"
+    selected_item_color = "#8B5CF6"
+    item_height = 40
+    item_padding = 10
+    item_spacing = 8
+    selected_item_font = "Sans Bold 16"
+}
+
++ progress_bar {
+    id = "__timeout__"
+    left = 25%
+    top = 80%
+    width = 50%
+    height = 12
+    highlight_color = "#8B5CF6"
+    bg_color = "#121520"
+    border_color = "#1E293B"
+}
+
++ label {
+    left = 0%
+    top = 92%
+    width = 100%
+    align = "center"
+    text = "Use Up/Down keys to move, Enter to select"
+    color = "#94A3B8"
+    font = "Sans Regular 12"
+}
