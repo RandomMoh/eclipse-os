@@ -68,6 +68,13 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
     live-config \
     systemd-sysv \
     network-manager \
+    xorg \
+    xserver-xorg \
+    xserver-xorg-video-all \
+    xserver-xorg-input-all \
+    dbus-x11 \
+    x11-xserver-utils \
+    desktop-base \
     xfce4 \
     xfce4-goodies \
     lightdm \
@@ -141,6 +148,11 @@ if [[ -f "$ROOTFS/etc/lightdm/lightdm.conf" ]]; then
     sed -i 's/^#\?autologin-user=.*/autologin-user=eclipse/' "$ROOTFS/etc/lightdm/lightdm.conf"
     sed -i 's/^#\?autologin-user-timeout=.*/autologin-user-timeout=0/' "$ROOTFS/etc/lightdm/lightdm.conf"
 fi
+
+# Set systemd graphical target and enable LightDM service
+echo -e "${BLUE}[+] Enabling LightDM and setting graphical default target...${RESET}"
+chroot "$ROOTFS" systemctl set-default graphical.target
+chroot "$ROOTFS" systemctl enable lightdm
 
 echo -e "${YELLOW}[*] Cleaning up package cache inside rootfs...${RESET}"
 chroot "$ROOTFS" apt-get clean
