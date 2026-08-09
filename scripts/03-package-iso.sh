@@ -37,6 +37,9 @@ mkdir -p "$ISO_STAGING/boot/grub/themes"
 mkdir -p "$ISO_STAGING/EFI/BOOT"
 mkdir -p "$OUTPUT_DIR"
 
+# Ensure virtual filesystems inside rootfs are unmounted before compression
+umount -l "$ROOTFS/dev/pts" "$ROOTFS/dev" "$ROOTFS/proc" "$ROOTFS/sys" 2>/dev/null || true
+
 # Compress rootfs to SquashFS
 echo -e "${YELLOW}[*] Compressing rootfs into SquashFS...${RESET}"
 rm -f "$ISO_STAGING/live/filesystem.squashfs"
@@ -45,7 +48,8 @@ mksquashfs "$ROOTFS" "$ISO_STAGING/live/filesystem.squashfs" \
     -b 1M \
     -no-recovery \
     -always-use-fragments \
-    -noappend
+    -noappend \
+    -e proc sys dev run tmp
 
 # Copy Kernel and Initramfs
 echo -e "${BLUE}[+] Copying latest kernel and initramfs...${RESET}"
