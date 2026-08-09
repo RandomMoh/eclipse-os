@@ -127,14 +127,21 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
 echo -e "${BLUE}[+] Installing Zen Browser into /opt/zen...${RESET}"
 mkdir -p "$ROOTFS/opt/zen"
 curl -fsSL -o "$ROOTFS/tmp/zen.linux-x86_64.tar.xz" "https://github.com/zen-browser/desktop/releases/latest/download/zen.linux-x86_64.tar.xz" || \
-curl -fsSL -o "$ROOTFS/tmp/zen.linux-x86_64.tar.xz" "https://github.com/zen-browser/desktop/releases/download/1.0.1-a.3/zen.linux-x86_64.tar.xz"
+curl -fsSL -o "$ROOTFS/tmp/zen.linux-x86_64.tar.xz" "https://github.com/zen-browser/desktop/releases/download/1.0.1-a.3/zen.linux-x86_64.tar.xz" || true
 
-tar -xf "$ROOTFS/tmp/zen.linux-x86_64.tar.xz" -C "$ROOTFS/opt/"
-rm -f "$ROOTFS/tmp/zen.linux-x86_64.tar.xz"
+if [[ -f "$ROOTFS/tmp/zen.linux-x86_64.tar.xz" ]]; then
+    tar -xf "$ROOTFS/tmp/zen.linux-x86_64.tar.xz" -C "$ROOTFS/opt/zen" --strip-components=1 2>/dev/null || tar -xf "$ROOTFS/tmp/zen.linux-x86_64.tar.xz" -C "$ROOTFS/opt/" 2>/dev/null || true
+    rm -f "$ROOTFS/tmp/zen.linux-x86_64.tar.xz"
+fi
 
 mkdir -p "$ROOTFS/usr/local/bin"
-ln -sf /opt/zen/zen "$ROOTFS/usr/local/bin/zen-browser"
-chmod +x "$ROOTFS/opt/zen/zen" 2>/dev/null || true
+if [[ -f "$ROOTFS/opt/zen/zen" ]]; then
+    ln -sf /opt/zen/zen "$ROOTFS/usr/local/bin/zen-browser"
+    chmod +x "$ROOTFS/opt/zen/zen" 2>/dev/null || true
+elif [[ -f "$ROOTFS/opt/zen/zen-bin" ]]; then
+    ln -sf /opt/zen/zen-bin "$ROOTFS/usr/local/bin/zen-browser"
+    chmod +x "$ROOTFS/opt/zen/zen-bin" 2>/dev/null || true
+fi
 
 mkdir -p "$ROOTFS/usr/share/applications"
 cat <<'EOF' > "$ROOTFS/usr/share/applications/zen-browser.desktop"
@@ -160,9 +167,13 @@ EOF
 
 echo -e "${BLUE}[+] Installing Flutter SDK into /opt/flutter...${RESET}"
 mkdir -p "$ROOTFS/opt"
-curl -fsSL -o "$ROOTFS/tmp/flutter_linux.tar.xz" "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.24.0-stable.tar.xz"
-tar -xf "$ROOTFS/tmp/flutter_linux.tar.xz" -C "$ROOTFS/opt/"
-rm -f "$ROOTFS/tmp/flutter_linux.tar.xz"
+if [[ ! -d "$ROOTFS/opt/flutter" || ! -f "$ROOTFS/opt/flutter/bin/flutter" ]]; then
+    curl -fsSL -o "$ROOTFS/tmp/flutter_linux.tar.xz" "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.24.0-stable.tar.xz" || true
+    if [[ -f "$ROOTFS/tmp/flutter_linux.tar.xz" ]]; then
+        tar -xf "$ROOTFS/tmp/flutter_linux.tar.xz" -C "$ROOTFS/opt/" 2>/dev/null || true
+        rm -f "$ROOTFS/tmp/flutter_linux.tar.xz"
+    fi
+fi
 
 mkdir -p "$ROOTFS/etc/profile.d"
 cp "$PROJECT_ROOT/config/flutter.sh" "$ROOTFS/etc/profile.d/flutter.sh"
