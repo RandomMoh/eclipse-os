@@ -158,6 +158,16 @@ x-scheme-handler/http=zen-browser.desktop
 x-scheme-handler/https=zen-browser.desktop
 EOF
 
+echo -e "${BLUE}[+] Installing Flutter SDK into /opt/flutter...${RESET}"
+mkdir -p "$ROOTFS/opt"
+curl -fsSL -o "$ROOTFS/tmp/flutter_linux.tar.xz" "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.24.0-stable.tar.xz"
+tar -xf "$ROOTFS/tmp/flutter_linux.tar.xz" -C "$ROOTFS/opt/"
+rm -f "$ROOTFS/tmp/flutter_linux.tar.xz"
+
+mkdir -p "$ROOTFS/etc/profile.d"
+cp "$PROJECT_ROOT/config/flutter.sh" "$ROOTFS/etc/profile.d/flutter.sh"
+chmod +x "$ROOTFS/etc/profile.d/flutter.sh"
+
 echo -e "${BLUE}[+] Provisioning desktop assets and configuration...${RESET}"
 # GTK Theme
 mkdir -p "$ROOTFS/usr/share/themes/Eclipse-Dark"
