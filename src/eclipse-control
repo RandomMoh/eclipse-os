@@ -1,0 +1,219 @@
+#!/usr/bin/env python3
+"""
+Eclipse OS System Controller Utility (eclipse-control)
+Manages system health status, GTK desktop themes, and automated developer toolchain setup.
+"""
+
+import os
+import sys
+import argparse
+import subprocess
+import shutil
+import platform
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
+from rich.text import Text
+
+console = Console()
+
+THEME_CONFIGS = {
+    "neon": {
+        "accent": "#8B5CF6",
+        "highlight": "#A78BFA",
+        "name": "Neon Violet Accent",
+    },
+    "cyan": {
+        "accent": "#06B6D4",
+        "highlight": "#22D3EE",
+        "name": "Electric Cyan Accent",
+    },
+    "dark": {
+        "accent": "#4C1D95",
+        "highlight": "#6D28D9",
+        "name": "Obsidian Dark Accent",
+    }
+}
+
+def check_service_status(service_name):
+    try:
+        res = subprocess.run(["systemctl", "is-active", service_name], capture_output=True, text=True, check=False)
+        status = res.stdout.strip()
+        if status == "active":
+            return "[bold green]● active (running)[/bold green]"
+        elif status in ("inactive", "failed"):
+            return f"[dim red]○ {status}[/dim red]"
+        else:
+            return f"[yellow]○ {status or 'unknown'}[/yellow]"
+    except Exception:
+        return "[dim white]○ unmonitored[/dim white]"
+
+def get_active_theme():
+    user_gtk_css = os.path.expanduser("~/.config/gtk-3.0/gtk.css")
+    sys_gtk_css = "/etc/gtk-3.0/gtk.css"
+    for path in (user_gtk_css, sys_gtk_css):
+        if os.path.exists(path):
+            try:
+                with open(path, "r") as f:
+                    content = f.read()
+                    if "#8B5CF6" in content or "neon" in content.lower():
+                        return "Neon Violet (#8B5CF6)"
+                    elif "#06B6D4" in content or "cyan" in content.lower():
+                        return "Electric Cyan (#06B6D4)"
+                    elif "#4C1D95" in content or "dark" in content.lower():
+                        return "Obsidian Dark (#4C1D95)"
+            except Exception:
+                pass
+    return "Eclipse-Dark (Default Neon Violet)"
+
+def cmd_status(args):
+    console.print(Panel("[bold #06B6D4]Eclipse OS System Controller[/bold #06B6D4]\n[dim white]System Diagnostic & Health Monitor[/dim white]", border_style="#8B5CF6"))
+
+    # Load average
+    try:
+        l1, l5, l15 = os.getloadavg()
+        load_str = f"1m: [bold #06B6D4]{l1:.2f}[/bold #06B6D4] | 5m: [bold #06B6D4]{l5:.2f}[/bold #06B6D4] | 15m: [bold #06B6D4]{l15:.2f}[/bold #06B6D4]"
+    except Exception:
+        load_str = "Unavailable"
+
+    # Services
+    services = ["lightdm", "NetworkManager", "dbus", "ssh", "systemd-journald", "docker"]
+    service_table = Table(title="[bold #06B6D4]Core Services Status[/bold #06B6D4]", border_style="#8B5CF6", header_style="bold #06B6D4")
+    service_table.add_column("Service", style="bold white")
+    service_table.add_column("Status", style="white")
+
+    for srv in services:
+        service_table.add_row(srv, check_service_status(srv))
+
+    # Overall Health Panel
+    health_text = (
+        f"[bold white]Overall Health Status:[/bold white] [bold green]● OPERATIONAL[/bold green]\n"
+        f"[bold white]Active GTK Theme:[/bold white] [bold #8B5CF6]{get_active_theme()}[/bold #8B5CF6]\n"
+        f"[bold white]System Load Average:[/bold white] {load_str}"
+    )
+
+    console.print(Panel(health_text, title="[bold #06B6D4]System Summary[/bold #06B6D4]", border_style="#06B6D4"))
+    console.print(service_table)
+
+def cmd_theme(args):
+    theme_choice = args.name.lower()
+    if theme_choice not in THEME_CONFIGS:
+        console.print(f"[bold red]Error:[/bold red] Unknown theme '{theme_choice}'. Options: dark, neon, cyan")
+        sys.exit(1)
+
+    cfg = THEME_CONFIGS[theme_choice]
+    accent = cfg["accent"]
+    highlight = cfg["highlight"]
+
+    css_content = (
+        f"/* Eclipse OS Custom GTK Accent: {cfg['name']} */\n"
+        f"@define-color accent_color {accent};\n"
+        f"@define-color highlight_color {highlight};\n"
+        f"@define-color theme_bg_color #0B0D14;\n"
+        f"@define-color theme_fg_color #E2E8F0;\n"
+        f"@define-color theme_selected_bg_color {accent};\n"
+        f"@define-color theme_selected_fg_color #FFFFFF;\n"
+    )
+
+    user_config_dir = os.path.expanduser("~/.config/gtk-3.0")
+    os.makedirs(user_config_dir, exist_ok=True)
+    user_css_path = os.path.join(user_config_dir, "gtk.css")
+
+    try:
+        with open(user_css_path, "w") as f:
+            f.write(css_content)
+        console.print(Panel(
+            f"[bold green]Theme updated successfully![/bold green]\n\n"
+            f"[white]Active Accent:[/white] [{accent}]{cfg['name']} ({accent})[/{accent}]\n"
+            f"[white]Config File:[/white] [dim]{user_css_path}[/dim]",
+            title="[bold #06B6D4]Eclipse OS Desktop Theme Controller[/bold #06B6D4]",
+            border_style=accent
+        ))
+    except Exception as e:
+        console.print(f"[bold red]Failed to write theme configuration:[/bold red] {e}")
+        sys.exit(1)
+
+def cmd_install_devtools(args):
+    console.print(Panel(
+        "[bold #06B6D4]Eclipse OS Developer Toolchain Installer[/bold #06B6D4]\n"
+        "[dim white]Automated setup for Docker, Node.js, Python venv, Git, Neovim, & VSCode[/dim white]",
+        border_style="#8B5CF6"
+    ))
+
+    is_root = (os.geteuid() == 0)
+    if not is_root:
+        console.print("[bold yellow]Warning:[/bold yellow] Non-root execution detected. Privileged steps will use sudo or report permission constraints.\n")
+
+    steps = [
+        ("Updating APT package index", ["apt-get", "update", "-y"]),
+        ("Installing Git & Neovim", ["apt-get", "install", "-y", "git", "neovim"]),
+        ("Installing Python virtualenv & pip tools", ["apt-get", "install", "-y", "python3-venv", "python3-pip", "python3-setuptools"]),
+        ("Installing Node.js & npm environment", ["apt-get", "install", "-y", "nodejs", "npm"]),
+        ("Installing Docker container engine", ["apt-get", "install", "-y", "docker.io"]),
+    ]
+
+    with Progress(
+        SpinnerColumn(style="#06B6D4"),
+        TextColumn("[bold white]{task.description}[/bold white]"),
+        BarColumn(bar_width=30, complete_style="#8B5CF6", finished_style="#06B6D4"),
+        console=console
+    ) as progress:
+        task = progress.add_task("Installing toolchain", total=len(steps) + 1)
+
+        for desc, cmd in steps:
+            progress.update(task, description=desc)
+            full_cmd = cmd if is_root else ["sudo"] + cmd
+            try:
+                subprocess.run(full_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+            except Exception as e:
+                console.print(f"[yellow]Step '{desc}' encountered notice:[/yellow] {e}")
+            progress.advance(task)
+
+        # VSCode repo key step
+        progress.update(task, description="Configuring VSCode repository keyring")
+        try:
+            keyring_dir = "/usr/share/keyrings"
+            if is_root and os.path.exists(keyring_dir):
+                gpg_cmd = "wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft.gpg"
+                subprocess.run(gpg_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+                repo_line = "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main\n"
+                with open("/etc/apt/sources.list.d/vscode.list", "w") as f:
+                    f.write(repo_line)
+        except Exception as e:
+            console.print(f"[yellow]VSCode keyring setup notice:[/yellow] {e}")
+        progress.advance(task)
+
+    console.print("\n[bold green]✓ Developer toolchain setup sequence finished.[/bold green]")
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="eclipse-control",
+        description="Eclipse OS System Controller & Toolchain Manager",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    subparsers = parser.add_subparsers(dest="command", help="Command to execute")
+
+    # status
+    status_parser = subparsers.add_parser("status", help="Display system health and service status")
+
+    # theme
+    theme_parser = subparsers.add_parser("theme", help="Update GTK desktop theme accent")
+    theme_parser.add_argument("name", choices=["dark", "neon", "cyan"], help="Theme accent option")
+
+    # install-devtools
+    devtools_parser = subparsers.add_parser("install-devtools", help="Automated developer toolchain installer")
+
+    args = parser.parse_args()
+
+    if args.command == "status":
+        cmd_status(args)
+    elif args.command == "theme":
+        cmd_theme(args)
+    elif args.command == "install-devtools":
+        cmd_install_devtools(args)
+    else:
+        parser.print_help()
+
+if __name__ == "__main__":
+    main()

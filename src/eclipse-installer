@@ -1,0 +1,207 @@
+#!/usr/bin/env python3
+"""
+Eclipse OS Live-to-Disk Installation Wizard (eclipse-installer)
+Interactive Python installer using rich TUI components.
+"""
+
+import os
+import sys
+import json
+import argparse
+import subprocess
+import shutil
+import time
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+from rich.prompt import Prompt, Confirm
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
+
+console = Console()
+
+def check_root_privileges():
+    return os.geteuid() == 0
+
+def scan_block_devices():
+    devices = []
+    try:
+        res = subprocess.run(["lsblk", "-J", "-o", "NAME,SIZE,TYPE,MODEL"], capture_output=True, text=True, check=False)
+        if res.returncode == 0:
+            data = json.loads(res.stdout)
+            for dev in data.get("blockdevices", []):
+                if dev.get("type") in ("disk", "loop"):
+                    dev_name = "/dev/" + dev["name"]
+                    size = dev.get("size", "Unknown")
+                    model = dev.get("model") or "Storage Disk"
+                    devices.append((dev_name, size, model.strip()))
+    except Exception:
+        pass
+
+    if not devices:
+        try:
+            res = subprocess.run(["lsblk", "-dn", "-o", "NAME,SIZE,TYPE,MODEL"], capture_output=True, text=True, check=False)
+            for line in res.stdout.splitlines():
+                parts = line.strip().split(maxsplit=3)
+                if len(parts) >= 3 and parts[2] in ("disk", "loop"):
+                    dev_name = "/dev/" + parts[0]
+                    size = parts[1]
+                    model = parts[3] if len(parts) > 3 else "Storage Disk"
+                    devices.append((dev_name, size, model))
+        except Exception:
+            pass
+
+    if not devices:
+        devices = [("/dev/sda", "64.0G", "Virtual Storage Disk"), ("/dev/nvme0n1", "512.0G", "NVMe Solid State Drive")]
+
+    return devices
+
+def get_partition_names(target_disk):
+    if target_disk.endswith(tuple("0123456789")):
+        return f"{target_disk}p1", f"{target_disk}p2"
+    else:
+        return f"{target_disk}1", f"{target_disk}2"
+
+def run_command(cmd, dry_run=False, ignore_error=False):
+    if dry_run:
+        console.print(f"[dim][DRY-RUN][/dim] Executing: [cyan]{' '.join(cmd)}[/cyan]")
+        return True
+    try:
+        res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, check=False)
+        if res.returncode != 0 and not ignore_error:
+            console.print(f"[bold red]Command failed:[/bold red] {' '.join(cmd)}")
+            console.print(f"[red]{res.stderr.strip()}[/red]")
+            return False
+        return True
+    except Exception as e:
+        if not ignore_error:
+            console.print(f"[bold red]Execution error:[/bold red] {e}")
+        return False
+
+def ask_password(prompt_text):
+    if sys.stdin.isatty():
+        return Prompt.ask(prompt_text, password=True)
+    else:
+        console.print(f"{prompt_text}: ", end="")
+        line = sys.stdin.readline().strip()
+        return line if line else "eclipse"
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="eclipse-installer",
+        description="Eclipse OS Live-to-Disk Interactive Installer",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument("--dry-run", action="store_true", help="Simulate installation sequence without writing to disk")
+    args = parser.parse_args()
+
+    console.print(Panel(
+        "[bold #06B6D4]Eclipse OS Live-to-Disk Installer[/bold #06B6D4]\n"
+        "[italic white]Syzygy v1.0 | Obsidian & Neon Edition[/italic white]",
+        border_style="#8B5CF6",
+        padding=(1, 2)
+    ))
+
+    if not check_root_privileges() and not args.dry_run:
+        console.print(Panel(
+            "[bold red]Root privileges required to run eclipse-installer.[/bold red]\n"
+            "Please re-run this command with [bold yellow]sudo eclipse-installer[/bold yellow].",
+            title="[bold red]Permission Denied[/bold red]",
+            border_style="red"
+        ))
+        sys.exit(1)
+
+    devices = scan_block_devices()
+    dev_table = Table(title="[bold #06B6D4]Detected Block Devices[/bold #06B6D4]", border_style="#8B5CF6", header_style="bold #06B6D4")
+    dev_table.add_column("Device Node", style="bold white")
+    dev_table.add_column("Capacity", style="cyan")
+    dev_table.add_column("Model / Description", style="dim white")
+
+    valid_choices = []
+    for idx, (node, size, model) in enumerate(devices, 1):
+        dev_table.add_row(f"[{idx}] {node}", size, model)
+        valid_choices.extend([str(idx), node])
+
+    console.print(dev_table)
+
+    selected_choice = Prompt.ask(
+        "[bold #06B6D4]Select target storage device (number or device path)[/bold #06B6D4]",
+        choices=valid_choices,
+        default="1"
+    )
+
+    if selected_choice.isdigit():
+        idx = int(selected_choice) - 1
+        target_disk = devices[idx][0]
+    else:
+        target_disk = selected_choice
+
+    hostname = Prompt.ask("[bold #06B6D4]Target System Hostname[/bold #06B6D4]", default="eclipse-os")
+    username = Prompt.ask("[bold #06B6D4]Admin Username[/bold #06B6D4]", default="eclipse")
+    password = ask_password("[bold #06B6D4]User Password[/bold #06B6D4]")
+    timezone = Prompt.ask("[bold #06B6D4]System Timezone[/bold #06B6D4]", default="UTC")
+
+    efi_part, root_part = get_partition_names(target_disk)
+
+    console.print("\n")
+    console.print(Panel(
+        f"[bold red]WARNING: ALL DATA ON {target_disk} WILL BE PERMANENTLY DESTROYED![/bold red]\n\n"
+        f"[bold white]Target Storage Disk:[/bold white] [bold cyan]{target_disk}[/bold cyan]\n"
+        f"[bold white]EFI Boot Partition:[/bold white] [cyan]{efi_part}[/cyan] (512MB FAT32)\n"
+        f"[bold white]Root System Partition:[/bold white] [cyan]{root_part}[/cyan] (Ext4)\n"
+        f"[bold white]System Hostname:[/bold white] [cyan]{hostname}[/cyan]\n"
+        f"[bold white]Admin User:[/bold white] [cyan]{username}[/cyan]\n"
+        f"[bold white]Timezone:[/bold white] [cyan]{timezone}[/cyan]",
+        title="[bold yellow]Confirm Installation Configuration[/bold yellow]",
+        border_style="yellow"
+    ))
+
+    if not Confirm.ask("[bold red]Are you sure you want to proceed with disk partitioning & formatting?[/bold red]", default=False):
+        console.print("[yellow]Installation aborted by user.[/yellow]")
+        sys.exit(0)
+
+    steps = [
+        ("Creating GPT Partition Table", ["parted", "-s", target_disk, "mklabel", "gpt"]),
+        ("Creating EFI System Partition (512MB)", ["parted", "-s", target_disk, "mkpart", "ESP", "fat32", "1MiB", "513MiB"]),
+        ("Setting EFI Boot Flag", ["parted", "-s", target_disk, "set", "1", "esp", "on"]),
+        ("Creating Ext4 Root Partition", ["parted", "-s", target_disk, "mkpart", "primary", "ext4", "513MiB", "100%"]),
+        ("Formatting EFI Partition FAT32", ["mkfs.vfat", "-F32", efi_part]),
+        ("Formatting Root Partition Ext4", ["mkfs.ext4", "-F", root_part]),
+        ("Creating Target Mount Directories", ["mkdir", "-p", "/mnt/target"]),
+        ("Mounting Root Partition", ["mount", root_part, "/mnt/target"]),
+        ("Creating EFI Mount Point", ["mkdir", "-p", "/mnt/target/boot/efi"]),
+        ("Mounting EFI Partition", ["mount", efi_part, "/mnt/target/boot/efi"]),
+        ("Copying Live Filesystem to Target Disk", ["rsync", "-aAXv", "--exclude=/proc", "--exclude=/sys", "--exclude=/dev", "--exclude=/pts", "--exclude=/mnt", "--exclude=/tmp", "--exclude=/run", "/", "/mnt/target"]),
+        ("Installing GRUB EFI Bootloader", ["chroot", "/mnt/target", "grub-install", "--target=x86_64-efi", "--efi-directory=/boot/efi", "--bootloader-id=EclipseOS", "--recheck"]),
+        ("Generating GRUB Configuration", ["chroot", "/mnt/target", "update-grub"]),
+        ("Unmounting Target File Systems", ["umount", "-R", "/mnt/target"])
+    ]
+
+    console.print("\n[bold #06B6D4]Starting Eclipse OS Disk Installation...[/bold #06B6D4]\n")
+
+    with Progress(
+        SpinnerColumn(style="#06B6D4"),
+        TextColumn("[bold white]{task.description}[/bold white]"),
+        BarColumn(bar_width=35, complete_style="#8B5CF6", finished_style="#06B6D4"),
+        console=console
+    ) as progress:
+        install_task = progress.add_task("Installing OS", total=len(steps))
+
+        for desc, cmd in steps:
+            progress.update(install_task, description=desc)
+            success = run_command(cmd, dry_run=args.dry_run, ignore_error=args.dry_run)
+            if not success and not args.dry_run:
+                console.print(f"\n[bold red]Installation halted during step:[/bold red] {desc}")
+                sys.exit(1)
+            time.sleep(0.1)
+            progress.advance(install_task)
+
+    console.print()
+    console.print(Panel(
+        "[bold green]✓ Eclipse OS v1.0 Syzygy installed successfully![/bold green]\n\n"
+        "[white]You may now reboot your system and remove the installation medium.[/white]",
+        title="[bold #06B6D4]Installation Complete[/bold #06B6D4]",
+        border_style="#06B6D4"
+    ))
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+"""
+Eclipse OS System Information Utility (eclipse-sysinfo)
+Displays hardware, OS metrics, resource usage, and network configuration.
+"""
+
+import os
+import sys
+import platform
+import socket
+import shutil
+import subprocess
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+from rich.progress import Progress, BarColumn, TextColumn
+from rich.text import Text
+from rich.align import Align
+
+def get_os_name():
+    return "Eclipse OS v1.0 Syzygy"
+
+def get_kernel_version():
+    return platform.release() or "Linux 6.1"
+
+def get_hostname():
+    return socket.gethostname() or "eclipse-os"
+
+def get_uptime():
+    try:
+        with open('/proc/uptime', 'r') as f:
+            total_seconds = float(f.readline().split()[0])
+        days = int(total_seconds // 86400)
+        hours = int((total_seconds % 86400) // 3600)
+        minutes = int((total_seconds % 3600) // 60)
+        parts = []
+        if days > 0:
+            parts.append(f"{days}d")
+        if hours > 0 or days > 0:
+            parts.append(f"{hours}h")
+        parts.append(f"{minutes}m")
+        return " ".join(parts)
+    except Exception:
+        return "Unknown"
+
+def get_cpu_model():
+    try:
+        with open('/proc/cpuinfo', 'r') as f:
+            for line in f:
+                if 'model name' in line:
+                    return line.split(':', 1)[1].strip()
+    except Exception:
+        pass
+    return platform.processor() or "Generic x86_64"
+
+def get_memory_info():
+    try:
+        mem = {}
+        with open('/proc/meminfo', 'r') as f:
+            for line in f:
+                parts = line.split(':')
+                if len(parts) == 2:
+                    key = parts[0].strip()
+                    val = parts[1].strip().split()[0]
+                    mem[key] = int(val)
+        total_mb = mem.get('MemTotal', 0) // 1024
+        available_mb = mem.get('MemAvailable', mem.get('MemFree', 0)) // 1024
+        used_mb = max(0, total_mb - available_mb)
+        pct = (used_mb / total_mb * 100) if total_mb > 0 else 0.0
+        return used_mb, total_mb, pct
+    except Exception:
+        return 0, 0, 0.0
+
+def get_disk_info():
+    try:
+        usage = shutil.disk_usage('/')
+        total_gb = usage.total / (1024 ** 3)
+        used_gb = usage.used / (1024 ** 3)
+        pct = (usage.used / usage.total * 100) if usage.total > 0 else 0.0
+        return used_gb, total_gb, pct
+    except Exception:
+        return 0.0, 0.0, 0.0
+
+def get_network_ips():
+    ips = {}
+    try:
+        res = subprocess.run(['ip', '-4', 'addr', 'show'], capture_output=True, text=True, check=False)
+        if res.returncode == 0:
+            current_iface = None
+            for line in res.stdout.splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                parts = line.split()
+                if len(parts) >= 2 and line[0].isdigit() and ':' in parts[1]:
+                    current_iface = parts[1].rstrip(':')
+                elif 'inet' in parts and current_iface:
+                    inet_idx = parts.index('inet')
+                    if inet_idx + 1 < len(parts):
+                        ip = parts[inet_idx + 1].split('/')[0]
+                        ips[current_iface] = ip
+    except Exception:
+        pass
+    if not ips:
+        try:
+            hostname = socket.gethostname()
+            ips['eth0'] = socket.gethostbyname(hostname)
+        except Exception:
+            ips['lo'] = '127.0.0.1'
+    return ips
+
+def render_meter(pct, width=20):
+    filled = max(0, min(width, int(round(width * (pct / 100)))))
+    empty = width - filled
+    return f"[#8B5CF6]{'█' * filled}[/#8B5CF6][#333344]{'░' * empty}[/#333344] [#06B6D4]{pct:.1f}%[/#06B6D4]"
+
+def main():
+    console = Console()
+
+    logo = (
+        "[#8B5CF6]  ███████╗ ██████╗██╗     ██████╗ ███████╗███████╗  ██████╗ ███████╗[/#8B5CF6]\n"
+        "[#8B5CF6]  ██╔════╝██╔════╝██║     ██╔══██╗██╔════╝██╔════╝ ██╔═══██╗██╔════╝[/#8B5CF6]\n"
+        "[#06B6D4]  █████╗  ██║     ██║     ██████╔╝███████╗█████╗   ██║   ██║███████╗[/#06B6D4]\n"
+        "[#06B6D4]  ██╔══╝  ██║     ██║     ██╔═══╝ ╚════██║██╔══╝   ██║   ██║╚════██║[/#06B6D4]\n"
+        "[#8B5CF6]  ███████╗╚██████╗███████╗██║     ███████║███████╗ ╚██████╔╝███████║[/#8B5CF6]\n"
+        "[#8B5CF6]  ╚══════╝ ╚═════╝╚══════╝╚═╝     ╚══════╝╚══════╝  ╚═════╝ ╚══════╝[/#8B5CF6]"
+    )
+
+    header_panel = Panel(
+        Align.center(logo + "\n\n[bold #06B6D4]Eclipse OS v1.0 Syzygy[/bold #06B6D4] | [italic white]Obsidian & Neon Edition[/italic white]"),
+        border_style="#8B5CF6",
+        padding=(1, 2)
+    )
+    console.print(header_panel)
+
+    used_mb, total_mb, mem_pct = get_memory_info()
+    used_gb, total_gb, disk_pct = get_disk_info()
+    net_ips = get_network_ips()
+    net_str = ", ".join([f"[bold #06B6D4]{iface}[/bold #06B6D4]: {ip}" for iface, ip in net_ips.items()])
+
+    table = Table(title="[bold #06B6D4]System Metrics & Hardware Profile[/bold #06B6D4]", border_style="#8B5CF6", header_style="bold #06B6D4")
+    table.add_column("Property", style="bold white", width=18)
+    table.add_column("Specification / Value", style="white", width=36)
+    table.add_column("Resource Usage", style="white", width=30)
+
+    table.add_row("OS Name", get_os_name(), "[dim]System Kernel[/dim]")
+    table.add_row("Kernel Version", get_kernel_version(), f"[dim]{platform.machine()}[/dim]")
+    table.add_row("Hostname", get_hostname(), "[dim]Local Node[/dim]")
+    table.add_row("Uptime", get_uptime(), "[dim]System Active[/dim]")
+    table.add_row("CPU Model", get_cpu_model(), "[dim]Processor[/dim]")
+    table.add_row("Memory Usage", f"{used_mb} MB / {total_mb} MB", render_meter(mem_pct))
+    table.add_row("Disk Usage (/)", f"{used_gb:.1f} GB / {total_gb:.1f} GB", render_meter(disk_pct))
+    table.add_row("Network IPs", net_str, "[dim]Interfaces[/dim]")
+
+    console.print(table)
+
+    # Use rich.progress.Progress to demonstrate system scan / metrics bar
+    with Progress(
+        TextColumn("[bold #06B6D4]{task.description}[/bold #06B6D4]"),
+        BarColumn(bar_width=40, complete_style="#8B5CF6", finished_style="#06B6D4"),
+        TextColumn("[bold white]{task.percentage:>3.0f}%[/bold white]"),
+        console=console,
+        transient=True
+    ) as progress:
+        task = progress.add_task("Refreshing metrics", total=100)
+        progress.update(task, completed=100)
+
+if __name__ == "__main__":
+    main()
