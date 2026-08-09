@@ -40,6 +40,11 @@ mkdir -p "$OUTPUT_DIR"
 # Ensure virtual filesystems inside rootfs are unmounted before compression
 umount -l "$ROOTFS/dev/pts" "$ROOTFS/dev" "$ROOTFS/proc" "$ROOTFS/sys" 2>/dev/null || true
 
+# Recreate empty required system mountpoint directories for init and live-boot
+rm -rf "$ROOTFS/proc/"* "$ROOTFS/sys/"* "$ROOTFS/dev/"* "$ROOTFS/run/"* "$ROOTFS/tmp/"* 2>/dev/null || true
+mkdir -p "$ROOTFS/proc" "$ROOTFS/sys" "$ROOTFS/dev" "$ROOTFS/run" "$ROOTFS/tmp"
+chmod 1777 "$ROOTFS/tmp"
+
 # Compress rootfs to SquashFS
 echo -e "${YELLOW}[*] Compressing rootfs into SquashFS...${RESET}"
 rm -f "$ISO_STAGING/live/filesystem.squashfs"
@@ -48,8 +53,7 @@ mksquashfs "$ROOTFS" "$ISO_STAGING/live/filesystem.squashfs" \
     -b 1M \
     -no-recovery \
     -always-use-fragments \
-    -noappend \
-    -e proc sys dev run tmp
+    -noappend
 
 # Copy Kernel and Initramfs
 echo -e "${BLUE}[+] Copying latest kernel and initramfs...${RESET}"
