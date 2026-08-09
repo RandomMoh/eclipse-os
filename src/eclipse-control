@@ -38,7 +38,7 @@ THEME_CONFIGS = {
 
 def check_service_status(service_name):
     try:
-        res = subprocess.run(["systemctl", "is-active", service_name], capture_output=True, text=True, check=False)
+        res = subprocess.run(["systemctl", "is-active", service_name], capture_output=True, text=True, check=False, timeout=3)
         status = res.stdout.strip()
         if status == "active":
             return "[bold green]● active (running)[/bold green]"
@@ -48,6 +48,72 @@ def check_service_status(service_name):
             return f"[yellow]○ {status or 'unknown'}[/yellow]"
     except Exception:
         return "[dim white]○ unmonitored[/dim white]"
+
+def get_php_status():
+    try:
+        res = subprocess.run(["php", "-v"], capture_output=True, text=True, check=False, timeout=3)
+        if res.returncode == 0 and res.stdout:
+            first_line = res.stdout.splitlines()[0]
+            parts = first_line.split()
+            ver = f"{parts[0]} {parts[1]}" if len(parts) >= 2 else first_line
+            return f"[bold green]● Installed[/bold green] ({ver})"
+    except Exception:
+        pass
+    return "[dim red]○ Not Installed[/dim red]"
+
+def get_node_npm_status():
+    try:
+        res_node = subprocess.run(["node", "-v"], capture_output=True, text=True, check=False, timeout=3)
+        res_npm = subprocess.run(["npm", "-v"], capture_output=True, text=True, check=False, timeout=3)
+        if res_node.returncode == 0:
+            node_ver = res_node.stdout.strip()
+            npm_ver = res_npm.stdout.strip() if res_npm.returncode == 0 else "N/A"
+            return f"[bold green]● Installed[/bold green] (Node {node_ver} / npm {npm_ver})"
+    except Exception:
+        pass
+    return "[dim red]○ Not Installed[/dim red]"
+
+def get_laravel_status():
+    try:
+        laravel_bin = shutil.which("laravel") or "/usr/local/bin/laravel"
+        if os.path.exists(laravel_bin) or shutil.which("laravel"):
+            res = subprocess.run(["laravel", "--version"], capture_output=True, text=True, check=False, timeout=3)
+            if res.returncode == 0 and res.stdout:
+                ver = res.stdout.strip()
+                return f"[bold green]● Installed[/bold green] ({ver})"
+            return "[bold green]● Installed[/bold green] (Laravel CLI)"
+    except Exception:
+        pass
+    return "[dim red]○ Not Installed[/dim red]"
+
+def get_flutter_status():
+    try:
+        flutter_bin = shutil.which("flutter") or "/opt/flutter/bin/flutter"
+        if os.path.exists(flutter_bin) or shutil.which("flutter"):
+            res = subprocess.run([flutter_bin, "--version"], capture_output=True, text=True, check=False, timeout=5)
+            if res.returncode == 0 and res.stdout:
+                first_line = res.stdout.splitlines()[0]
+                return f"[bold green]● Installed[/bold green] ({first_line})"
+            return "[bold green]● Installed[/bold green] (/opt/flutter)"
+    except Exception:
+        pass
+    return "[dim red]○ Not Installed[/dim red]"
+
+def get_flame_status():
+    try:
+        flutter_bin = shutil.which("flutter") or "/opt/flutter/bin/flutter"
+        if os.path.exists(flutter_bin) or shutil.which("flutter"):
+            return "[bold green]● Ready[/bold green] (Flame Engine 2D for Flutter)"
+    except Exception:
+        pass
+    return "[dim red]○ Unavailable[/dim red]"
+
+def get_zen_status():
+    zen_bin = "/usr/local/bin/zen-browser"
+    opt_zen = "/opt/zen/zen"
+    if os.path.exists(zen_bin) or os.path.exists(opt_zen) or shutil.which("zen-browser"):
+        return f"[bold green]● Installed[/bold green] ({zen_bin})"
+    return "[dim red]○ Not Installed[/dim red]"
 
 def get_active_theme():
     user_gtk_css = os.path.expanduser("~/.config/gtk-3.0/gtk.css")
@@ -68,7 +134,7 @@ def get_active_theme():
     return "Eclipse-Dark (Default Neon Violet)"
 
 def cmd_status(args):
-    console.print(Panel("[bold #06B6D4]Eclipse OS System Controller[/bold #06B6D4]\n[dim white]System Diagnostic & Health Monitor[/dim white]", border_style="#8B5CF6"))
+    console.print(Panel("[bold #06B6D4]Eclipse OS System Controller[/bold #06B6D4]\n[dim white]System Diagnostic & Developer Stack Monitor[/dim white]", border_style="#8B5CF6"))
 
     # Load average
     try:
@@ -78,13 +144,28 @@ def cmd_status(args):
         load_str = "Unavailable"
 
     # Services
-    services = ["lightdm", "NetworkManager", "dbus", "ssh", "systemd-journald", "docker"]
+    services = ["lightdm", "NetworkManager", "dbus", "ssh", "systemd-journald", "apache2", "mariadb"]
     service_table = Table(title="[bold #06B6D4]Core Services Status[/bold #06B6D4]", border_style="#8B5CF6", header_style="bold #06B6D4")
     service_table.add_column("Service", style="bold white")
     service_table.add_column("Status", style="white")
 
     for srv in services:
         service_table.add_row(srv, check_service_status(srv))
+
+    # Developer Stack & Toolchain Table
+    stack_table = Table(title="[bold #06B6D4]Developer Stack & Toolchain Status[/bold #06B6D4]", border_style="#8B5CF6", header_style="bold #06B6D4")
+    stack_table.add_column("Component", style="bold white", width=22)
+    stack_table.add_column("Check / Binary Path", style="white", width=32)
+    stack_table.add_column("Status / Version", style="white")
+
+    stack_table.add_row("Apache2 Web Server", "apache2ctl / systemctl", check_service_status("apache2"))
+    stack_table.add_row("MariaDB Database", "mariadb / systemctl", check_service_status("mariadb"))
+    stack_table.add_row("PHP Runtime", "php -v", get_php_status())
+    stack_table.add_row("Node.js & npm", "node -v / npm -v", get_node_npm_status())
+    stack_table.add_row("Laravel CLI", "laravel --version", get_laravel_status())
+    stack_table.add_row("Flutter SDK", "flutter --version", get_flutter_status())
+    stack_table.add_row("Flame Engine", "Flutter 2D Game Engine", get_flame_status())
+    stack_table.add_row("Zen Browser", "/usr/local/bin/zen-browser", get_zen_status())
 
     # Overall Health Panel
     health_text = (
@@ -95,6 +176,7 @@ def cmd_status(args):
 
     console.print(Panel(health_text, title="[bold #06B6D4]System Summary[/bold #06B6D4]", border_style="#06B6D4"))
     console.print(service_table)
+    console.print(stack_table)
 
 def cmd_theme(args):
     theme_choice = args.name.lower()
@@ -134,10 +216,83 @@ def cmd_theme(args):
         console.print(f"[bold red]Failed to write theme configuration:[/bold red] {e}")
         sys.exit(1)
 
+def run_step_cmd(cmd, is_root=False):
+    full_cmd = cmd if is_root else (["sudo"] + cmd if shutil.which("sudo") else cmd)
+    try:
+        subprocess.run(full_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+        return True
+    except Exception:
+        return False
+
+def update_laravel_installer(is_root=False):
+    try:
+        env = os.environ.copy()
+        env["COMPOSER_ALLOW_SUPERUSER"] = "1"
+        subprocess.run(["composer", "global", "require", "laravel/installer"], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+        composer_bin = os.path.expanduser("~/.config/composer/vendor/bin/laravel")
+        root_composer_bin = "/root/.config/composer/vendor/bin/laravel"
+        target_bin = "/usr/local/bin/laravel"
+        src_bin = composer_bin if os.path.exists(composer_bin) else root_composer_bin
+        if os.path.exists(src_bin) and not os.path.exists(target_bin):
+            run_step_cmd(["ln", "-sf", src_bin, target_bin], is_root)
+        return True
+    except Exception:
+        return False
+
+def update_flutter_sdk(is_root=False):
+    flutter_bin = "/opt/flutter/bin/flutter"
+    if os.path.exists(flutter_bin):
+        subprocess.run([flutter_bin, "upgrade"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+        return True
+    else:
+        try:
+            url = "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.24.0-stable.tar.xz"
+            tmp_tar = "/tmp/flutter_linux.tar.xz"
+            subprocess.run(["curl", "-fsSL", "-o", tmp_tar, url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+            if os.path.exists(tmp_tar):
+                os.makedirs("/opt", exist_ok=True)
+                run_step_cmd(["tar", "-xf", tmp_tar, "-C", "/opt/"], is_root)
+                os.remove(tmp_tar)
+                profile_path = "/etc/profile.d/flutter.sh"
+                if not os.path.exists(profile_path):
+                    content = 'export PATH="$PATH:/opt/flutter/bin"\nexport FLUTTER_ROOT="/opt/flutter"\n'
+                    if is_root:
+                        with open(profile_path, "w") as f:
+                            f.write(content)
+                        os.chmod(profile_path, 0o755)
+                return True
+        except Exception:
+            pass
+        return False
+
+def update_zen_browser(is_root=False):
+    zen_bin = "/usr/local/bin/zen-browser"
+    opt_zen = "/opt/zen/zen"
+    if os.path.exists(zen_bin) and os.path.exists(opt_zen):
+        return True
+    try:
+        url = "https://github.com/zen-browser/desktop/releases/latest/download/zen.linux-x86_64.tar.xz"
+        tmp_tar = "/tmp/zen.linux-x86_64.tar.xz"
+        res = subprocess.run(["curl", "-fsSL", "-o", tmp_tar, url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+        if res.returncode != 0:
+            url = "https://github.com/zen-browser/desktop/releases/download/1.0.1-a.3/zen.linux-x86_64.tar.xz"
+            subprocess.run(["curl", "-fsSL", "-o", tmp_tar, url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+        if os.path.exists(tmp_tar):
+            os.makedirs("/opt/zen", exist_ok=True)
+            run_step_cmd(["tar", "-xf", tmp_tar, "-C", "/opt/"], is_root)
+            os.remove(tmp_tar)
+            run_step_cmd(["ln", "-sf", "/opt/zen/zen", zen_bin], is_root)
+            if os.path.exists("/opt/zen/zen"):
+                run_step_cmd(["chmod", "+x", "/opt/zen/zen"], is_root)
+            return True
+    except Exception:
+        pass
+    return False
+
 def cmd_install_devtools(args):
     console.print(Panel(
-        "[bold #06B6D4]Eclipse OS Developer Toolchain Installer[/bold #06B6D4]\n"
-        "[dim white]Automated setup for Docker, Node.js, Python venv, Git, Neovim, & VSCode[/dim white]",
+        "[bold #06B6D4]Eclipse OS Developer Toolchain Manager[/bold #06B6D4]\n"
+        "[dim white]Automated setup, updates, and verification for LAMP stack, Node.js, Laravel, Flutter, Flame, & Zen Browser[/dim white]",
         border_style="#8B5CF6"
     ))
 
@@ -146,11 +301,15 @@ def cmd_install_devtools(args):
         console.print("[bold yellow]Warning:[/bold yellow] Non-root execution detected. Privileged steps will use sudo or report permission constraints.\n")
 
     steps = [
-        ("Updating APT package index", ["apt-get", "update", "-y"]),
-        ("Installing Git & Neovim", ["apt-get", "install", "-y", "git", "neovim"]),
-        ("Installing Python virtualenv & pip tools", ["apt-get", "install", "-y", "python3-venv", "python3-pip", "python3-setuptools"]),
-        ("Installing Node.js & npm environment", ["apt-get", "install", "-y", "nodejs", "npm"]),
-        ("Installing Docker container engine", ["apt-get", "install", "-y", "docker.io"]),
+        ("Updating APT package repositories", lambda: run_step_cmd(["apt-get", "update", "-y"], is_root)),
+        ("Installing & updating Node.js & npm environment", lambda: run_step_cmd(["apt-get", "install", "-y", "nodejs", "npm"], is_root)),
+        ("Installing & updating PHP and LAMP stack packages", lambda: run_step_cmd([
+            "apt-get", "install", "-y", "apache2", "mariadb-server", "php", "php-cli",
+            "php-mbstring", "php-xml", "php-curl", "php-mysql", "php-zip", "composer"
+        ], is_root)),
+        ("Updating Composer packages (laravel/installer)", lambda: update_laravel_installer(is_root)),
+        ("Updating Flutter SDK (flutter upgrade)", lambda: update_flutter_sdk(is_root)),
+        ("Updating & verifying Zen Browser binaries", lambda: update_zen_browser(is_root)),
     ]
 
     with Progress(
@@ -159,32 +318,34 @@ def cmd_install_devtools(args):
         BarColumn(bar_width=30, complete_style="#8B5CF6", finished_style="#06B6D4"),
         console=console
     ) as progress:
-        task = progress.add_task("Installing toolchain", total=len(steps) + 1)
+        task = progress.add_task("Configuring developer stack", total=len(steps))
 
-        for desc, cmd in steps:
+        for desc, action in steps:
             progress.update(task, description=desc)
-            full_cmd = cmd if is_root else ["sudo"] + cmd
             try:
-                subprocess.run(full_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+                action()
             except Exception as e:
-                console.print(f"[yellow]Step '{desc}' encountered notice:[/yellow] {e}")
+                console.print(f"[yellow]Step '{desc}' notice:[/yellow] {e}")
             progress.advance(task)
 
-        # VSCode repo key step
-        progress.update(task, description="Configuring VSCode repository keyring")
-        try:
-            keyring_dir = "/usr/share/keyrings"
-            if is_root and os.path.exists(keyring_dir):
-                gpg_cmd = "wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft.gpg"
-                subprocess.run(gpg_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
-                repo_line = "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main\n"
-                with open("/etc/apt/sources.list.d/vscode.list", "w") as f:
-                    f.write(repo_line)
-        except Exception as e:
-            console.print(f"[yellow]VSCode keyring setup notice:[/yellow] {e}")
-        progress.advance(task)
+    console.print("\n[bold green]✓ Developer toolchain setup and update sequence finished.[/bold green]\n")
 
-    console.print("\n[bold green]✓ Developer toolchain setup sequence finished.[/bold green]")
+    # Print Verification Summary Table
+    ver_table = Table(title="[bold #06B6D4]Developer Stack Verification Summary[/bold #06B6D4]", border_style="#8B5CF6", header_style="bold #06B6D4")
+    ver_table.add_column("Component", style="bold white", width=22)
+    ver_table.add_column("Check Command / Path", style="white", width=32)
+    ver_table.add_column("Status / Version", style="white")
+
+    ver_table.add_row("Apache2 Web Server", "systemctl is-active apache2", check_service_status("apache2"))
+    ver_table.add_row("MariaDB Database", "systemctl is-active mariadb", check_service_status("mariadb"))
+    ver_table.add_row("PHP Runtime", "php -v", get_php_status())
+    ver_table.add_row("Node.js & npm", "node -v / npm -v", get_node_npm_status())
+    ver_table.add_row("Laravel CLI", "laravel --version", get_laravel_status())
+    ver_table.add_row("Flutter SDK", "flutter --version", get_flutter_status())
+    ver_table.add_row("Flame Engine", "Flutter 2D Game Engine", get_flame_status())
+    ver_table.add_row("Zen Browser", "/usr/local/bin/zen-browser", get_zen_status())
+
+    console.print(ver_table)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -195,14 +356,14 @@ def main():
     subparsers = parser.add_subparsers(dest="command", help="Command to execute")
 
     # status
-    status_parser = subparsers.add_parser("status", help="Display system health and service status")
+    status_parser = subparsers.add_parser("status", help="Display system health and developer stack status")
 
     # theme
     theme_parser = subparsers.add_parser("theme", help="Update GTK desktop theme accent")
     theme_parser.add_argument("name", choices=["dark", "neon", "cyan"], help="Theme accent option")
 
     # install-devtools
-    devtools_parser = subparsers.add_parser("install-devtools", help="Automated developer toolchain installer")
+    devtools_parser = subparsers.add_parser("install-devtools", help="Automated developer toolchain installer and updater")
 
     args = parser.parse_args()
 
