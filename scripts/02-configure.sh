@@ -168,6 +168,19 @@ mkdir -p "$ROOTFS/etc/profile.d"
 cp "$PROJECT_ROOT/config/flutter.sh" "$ROOTFS/etc/profile.d/flutter.sh"
 chmod +x "$ROOTFS/etc/profile.d/flutter.sh"
 
+echo -e "${BLUE}[+] Installing Laravel CLI via Composer...${RESET}"
+chroot "$ROOTFS" env COMPOSER_ALLOW_SUPERUSER=1 composer global require laravel/installer
+mkdir -p "$ROOTFS/usr/local/bin"
+chroot "$ROOTFS" ln -sf /root/.config/composer/vendor/bin/laravel /usr/local/bin/laravel 2>/dev/null || true
+
+# Add Composer vendor bin path to default profile for all users
+mkdir -p "$ROOTFS/etc/profile.d"
+cat <<'EOF' > "$ROOTFS/etc/profile.d/composer.sh"
+#!/usr/bin/env bash
+export PATH="$PATH:$HOME/.config/composer/vendor/bin"
+EOF
+chmod +x "$ROOTFS/etc/profile.d/composer.sh"
+
 echo -e "${BLUE}[+] Provisioning desktop assets and configuration...${RESET}"
 # GTK Theme
 mkdir -p "$ROOTFS/usr/share/themes/Eclipse-Dark"
