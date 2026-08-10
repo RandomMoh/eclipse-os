@@ -1,0 +1,25 @@
+[Colors:Button]
+BackgroundAlternate=45,46,55
+BackgroundNormal=30,31,41
+ForegroundNormal=248,250,252
+
+[Colors:Selection]
+Background=53,132,228
+Foreground=255,255,255
+
+[Colors:View]
+Background=24,25,32
+Foreground=248,250,252
+
+[Colors:Window]
+Background=18,19,24
+Foreground=248,250,252
+
+[General]
+ColorScheme=BreezeDark
+AccentColor=53,132,228
+Name=Eclipse Fedora Blue
+
+[KDE]
+SingleClick=false
+widgetStyle=Breeze

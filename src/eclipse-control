@@ -282,7 +282,32 @@ def cmd_theme(args):
         except Exception:
             pass
 
-    # 2. Update ~/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml
+    # 2. Update ~/.config/kdeglobals for KDE Plasma AccentColor
+    kdeglobals_path = os.path.expanduser("~/.config/kdeglobals")
+    if os.path.exists(kdeglobals_path):
+        try:
+            rgb_map = {
+                "#3584E4": "53,132,228",
+                "#24292E": "53,132,228",
+                "#06B6D4": "6,182,212",
+                "#10B981": "16,185,129",
+                "#E11D48": "225,29,72",
+            }
+            rgb_val = rgb_map.get(accent, "53,132,228")
+            with open(kdeglobals_path, "r") as f:
+                lines = f.readlines()
+            new_lines = []
+            for line in lines:
+                if line.startswith("AccentColor="):
+                    new_lines.append(f"AccentColor={rgb_val}\n")
+                else:
+                    new_lines.append(line)
+            with open(kdeglobals_path, "w") as f:
+                f.writelines(new_lines)
+        except Exception:
+            pass
+
+    # 3. Update ~/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml
     xsettings_dir = os.path.expanduser("~/.config/xfce4/xfconf/xfce-perchannel-xml")
     os.makedirs(xsettings_dir, exist_ok=True)
     xsettings_path = os.path.join(xsettings_dir, "xsettings.xml")
