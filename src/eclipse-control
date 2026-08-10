@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-"""
-Eclipse OS System Controller Utility (eclipse-control)
-Manages system health status, GTK desktop themes, and automated developer toolchain setup.
-"""
 
 import os
 import sys
@@ -19,21 +15,30 @@ from rich.text import Text
 console = Console()
 
 THEME_CONFIGS = {
-    "neon": {
-        "accent": "#8B5CF6",
-        "highlight": "#A78BFA",
-        "name": "Neon Violet Accent",
-    },
-    "cyan": {
-        "accent": "#06B6D4",
-        "highlight": "#22D3EE",
-        "name": "Electric Cyan Accent",
+    "crimson": {
+        "accent": "#E11D48",
+        "highlight": "#F43F5E",
+        "name": "Crimson Obsidian Accent",
+        "folder": "Eclipse-Crimson",
     },
     "dark": {
         "accent": "#4C1D95",
         "highlight": "#6D28D9",
         "name": "Obsidian Dark Accent",
-    }
+        "folder": "Eclipse-Dark",
+    },
+    "cyan": {
+        "accent": "#06B6D4",
+        "highlight": "#22D3EE",
+        "name": "Electric Cyan Accent",
+        "folder": "Eclipse-Cyan",
+    },
+    "emerald": {
+        "accent": "#10B981",
+        "highlight": "#34D399",
+        "name": "Emerald Obsidian Accent",
+        "folder": "Eclipse-Emerald",
+    },
 }
 
 def check_service_status(service_name):
@@ -115,37 +120,73 @@ def get_zen_status():
         return f"[bold green]● Installed[/bold green] ({zen_bin})"
     return "[dim red]○ Not Installed[/dim red]"
 
+def get_icon_theme():
+    xsettings_path = os.path.expanduser("~/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml")
+    if os.path.exists(xsettings_path):
+        try:
+            with open(xsettings_path, "r") as f:
+                content = f.read()
+                if "IconThemeName" in content:
+                    for line in content.splitlines():
+                        if "IconThemeName" in line and 'value="' in line:
+                            val = line.split('value="')[1].split('"')[0]
+                            return f"[bold green]● Active[/bold green] ({val})"
+        except Exception:
+            pass
+    if os.path.exists("/usr/share/icons/Papirus-Dark") or os.path.exists("/usr/share/icons/Papirus"):
+        return "[bold green]● Installed[/bold green] (Papirus-Dark)"
+    return "[bold green]● Installed[/bold green] (Papirus-Dark)"
+
 def get_active_theme():
     user_gtk_css = os.path.expanduser("~/.config/gtk-3.0/gtk.css")
     sys_gtk_css = "/etc/gtk-3.0/gtk.css"
+    xsettings_path = os.path.expanduser("~/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml")
+
+    if os.path.exists(xsettings_path):
+        try:
+            with open(xsettings_path, "r") as f:
+                content = f.read()
+                if "Eclipse-Crimson" in content:
+                    return "Eclipse-Crimson (#E11D48)"
+                elif "Eclipse-Emerald" in content:
+                    return "Eclipse-Emerald (#10B981)"
+                elif "Eclipse-Cyan" in content:
+                    return "Eclipse-Cyan (#06B6D4)"
+                elif "Eclipse-Dark" in content:
+                    return "Eclipse-Dark (#4C1D95)"
+        except Exception:
+            pass
+
     for path in (user_gtk_css, sys_gtk_css):
         if os.path.exists(path):
             try:
                 with open(path, "r") as f:
                     content = f.read()
-                    if "#8B5CF6" in content or "neon" in content.lower():
-                        return "Neon Violet (#8B5CF6)"
+                    if "#E11D48" in content or "crimson" in content.lower():
+                        return "Eclipse-Crimson (#E11D48)"
+                    elif "#10B981" in content or "emerald" in content.lower():
+                        return "Eclipse-Emerald (#10B981)"
                     elif "#06B6D4" in content or "cyan" in content.lower():
-                        return "Electric Cyan (#06B6D4)"
+                        return "Eclipse-Cyan (#06B6D4)"
                     elif "#4C1D95" in content or "dark" in content.lower():
-                        return "Obsidian Dark (#4C1D95)"
+                        return "Eclipse-Dark (#4C1D95)"
             except Exception:
                 pass
-    return "Eclipse-Dark (Default Neon Violet)"
+    return "Eclipse-Crimson (Default Crimson Obsidian)"
 
 def cmd_status(args):
-    console.print(Panel("[bold #06B6D4]Eclipse OS System Controller[/bold #06B6D4]\n[dim white]System Diagnostic & Developer Stack Monitor[/dim white]", border_style="#8B5CF6"))
+    console.print(Panel("[bold #F43F5E]Eclipse OS System Controller[/bold #F43F5E]\n[dim white]System Diagnostic & Developer Stack Monitor[/dim white]", border_style="#9F1239"))
 
     # Load average
     try:
         l1, l5, l15 = os.getloadavg()
-        load_str = f"1m: [bold #06B6D4]{l1:.2f}[/bold #06B6D4] | 5m: [bold #06B6D4]{l5:.2f}[/bold #06B6D4] | 15m: [bold #06B6D4]{l15:.2f}[/bold #06B6D4]"
+        load_str = f"1m: [bold #F43F5E]{l1:.2f}[/bold #F43F5E] | 5m: [bold #F43F5E]{l5:.2f}[/bold #F43F5E] | 15m: [bold #F43F5E]{l15:.2f}[/bold #F43F5E]"
     except Exception:
         load_str = "Unavailable"
 
     # Services
     services = ["lightdm", "NetworkManager", "dbus", "ssh", "systemd-journald", "apache2", "mariadb"]
-    service_table = Table(title="[bold #06B6D4]Core Services Status[/bold #06B6D4]", border_style="#8B5CF6", header_style="bold #06B6D4")
+    service_table = Table(title="[bold #F43F5E]Core Services Status[/bold #F43F5E]", border_style="#9F1239", header_style="bold #F43F5E")
     service_table.add_column("Service", style="bold white")
     service_table.add_column("Status", style="white")
 
@@ -153,7 +194,7 @@ def cmd_status(args):
         service_table.add_row(srv, check_service_status(srv))
 
     # Developer Stack & Toolchain Table
-    stack_table = Table(title="[bold #06B6D4]Developer Stack & Toolchain Status[/bold #06B6D4]", border_style="#8B5CF6", header_style="bold #06B6D4")
+    stack_table = Table(title="[bold #F43F5E]Developer Stack & Desktop Environment Status[/bold #F43F5E]", border_style="#9F1239", header_style="bold #F43F5E")
     stack_table.add_column("Component", style="bold white", width=22)
     stack_table.add_column("Check / Binary Path", style="white", width=32)
     stack_table.add_column("Status / Version", style="white")
@@ -166,55 +207,127 @@ def cmd_status(args):
     stack_table.add_row("Flutter SDK", "flutter --version", get_flutter_status())
     stack_table.add_row("Flame Engine", "Flutter 2D Game Engine", get_flame_status())
     stack_table.add_row("Zen Browser", "/usr/local/bin/zen-browser", get_zen_status())
+    stack_table.add_row("Papirus Icon Theme", "Papirus-Dark", get_icon_theme())
 
     # Overall Health Panel
     health_text = (
         f"[bold white]Overall Health Status:[/bold white] [bold green]● OPERATIONAL[/bold green]\n"
-        f"[bold white]Active GTK Theme:[/bold white] [bold #8B5CF6]{get_active_theme()}[/bold #8B5CF6]\n"
+        f"[bold white]Active GTK Theme:[/bold white] [bold #E11D48]{get_active_theme()}[/bold #E11D48]\n"
+        f"[bold white]Icon Theme Status:[/bold white] [bold #F43F5E]Papirus-Dark[/bold #F43F5E]\n"
         f"[bold white]System Load Average:[/bold white] {load_str}"
     )
 
-    console.print(Panel(health_text, title="[bold #06B6D4]System Summary[/bold #06B6D4]", border_style="#06B6D4"))
+    console.print(Panel(health_text, title="[bold #F43F5E]System Summary[/bold #F43F5E]", border_style="#9F1239"))
     console.print(service_table)
     console.print(stack_table)
 
 def cmd_theme(args):
     theme_choice = args.name.lower()
     if theme_choice not in THEME_CONFIGS:
-        console.print(f"[bold red]Error:[/bold red] Unknown theme '{theme_choice}'. Options: dark, neon, cyan")
+        console.print(f"[bold red]Error:[/bold red] Unknown theme '{theme_choice}'. Options: crimson, dark, cyan, emerald")
         sys.exit(1)
 
     cfg = THEME_CONFIGS[theme_choice]
     accent = cfg["accent"]
     highlight = cfg["highlight"]
+    theme_folder = cfg["folder"]
 
-    css_content = (
-        f"/* Eclipse OS Custom GTK Accent: {cfg['name']} */\n"
-        f"@define-color accent_color {accent};\n"
-        f"@define-color highlight_color {highlight};\n"
-        f"@define-color theme_bg_color #0B0D14;\n"
-        f"@define-color theme_fg_color #E2E8F0;\n"
-        f"@define-color theme_selected_bg_color {accent};\n"
-        f"@define-color theme_selected_fg_color #FFFFFF;\n"
-    )
-
+    # 1. Copy theme folder / files to ~/.config/gtk-3.0/
     user_config_dir = os.path.expanduser("~/.config/gtk-3.0")
     os.makedirs(user_config_dir, exist_ok=True)
-    user_css_path = os.path.join(user_config_dir, "gtk.css")
 
-    try:
-        with open(user_css_path, "w") as f:
-            f.write(css_content)
-        console.print(Panel(
-            f"[bold green]Theme updated successfully![/bold green]\n\n"
-            f"[white]Active Accent:[/white] [{accent}]{cfg['name']} ({accent})[/{accent}]\n"
-            f"[white]Config File:[/white] [dim]{user_css_path}[/dim]",
-            title="[bold #06B6D4]Eclipse OS Desktop Theme Controller[/bold #06B6D4]",
-            border_style=accent
-        ))
-    except Exception as e:
-        console.print(f"[bold red]Failed to write theme configuration:[/bold red] {e}")
-        sys.exit(1)
+    source_candidates = [
+        f"/usr/share/themes/{theme_folder}/gtk-3.0",
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "config", "gtk", "themes", theme_folder, "gtk-3.0"),
+        f"/home/mohs/eclipse-os/config/gtk/themes/{theme_folder}/gtk-3.0",
+    ]
+
+    copied_from = None
+    for candidate in source_candidates:
+        candidate_path = os.path.abspath(candidate)
+        if os.path.exists(candidate_path):
+            try:
+                for item in os.listdir(candidate_path):
+                    s_file = os.path.join(candidate_path, item)
+                    d_file = os.path.join(user_config_dir, item)
+                    if os.path.isfile(s_file):
+                        shutil.copy2(s_file, d_file)
+                    elif os.path.isdir(s_file):
+                        if os.path.exists(d_file):
+                            shutil.rmtree(d_file)
+                        shutil.copytree(s_file, d_file)
+                copied_from = candidate_path
+                break
+            except Exception:
+                pass
+
+    user_css_path = os.path.join(user_config_dir, "gtk.css")
+    if not os.path.exists(user_css_path):
+        css_content = (
+            f"/* Eclipse OS Custom GTK Accent: {cfg['name']} */\n"
+            f"@define-color accent_color {accent};\n"
+            f"@define-color highlight_color {highlight};\n"
+            f"@define-color theme_bg_color #0B0D14;\n"
+            f"@define-color theme_fg_color #E2E8F0;\n"
+            f"@define-color theme_selected_bg_color {accent};\n"
+            f"@define-color theme_selected_fg_color #FFFFFF;\n"
+        )
+        try:
+            with open(user_css_path, "w") as f:
+                f.write(css_content)
+        except Exception:
+            pass
+
+    # 2. Update ~/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml
+    xsettings_dir = os.path.expanduser("~/.config/xfce4/xfconf/xfce-perchannel-xml")
+    os.makedirs(xsettings_dir, exist_ok=True)
+    xsettings_path = os.path.join(xsettings_dir, "xsettings.xml")
+
+    xml_updated = False
+    if os.path.exists(xsettings_path):
+        try:
+            with open(xsettings_path, "r") as f:
+                content = f.read()
+            import re
+            new_content = re.sub(
+                r'(<property\s+name="ThemeName"\s+type="string"\s+value=")[^"]*("/>)',
+                rf'\g<1>{theme_folder}\2',
+                content
+            )
+            with open(xsettings_path, "w") as f:
+                f.write(new_content)
+            xml_updated = True
+        except Exception:
+            pass
+
+    if not xml_updated:
+        default_xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>\n\n'
+            '<channel name="xsettings" version="1.0">\n'
+            '  <property name="Net" type="empty">\n'
+            f'    <property name="ThemeName" type="string" value="{theme_folder}"/>\n'
+            '    <property name="IconThemeName" type="string" value="Papirus-Dark"/>\n'
+            '  </property>\n'
+            '</channel>\n'
+        )
+        try:
+            with open(xsettings_path, "w") as f:
+                f.write(default_xml)
+        except Exception:
+            pass
+
+    # Dynamically update running XFCE session if xfconf-query is present
+    if shutil.which("xfconf-query"):
+        subprocess.run(["xfconf-query", "-c", "xsettings", "-p", "/Net/ThemeName", "-s", theme_folder], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+
+    console.print(Panel(
+        f"[bold green]Theme updated successfully to {theme_folder}![/bold green]\n\n"
+        f"[white]Active Accent:[/white] [{accent}]{cfg['name']} ({accent})[/{accent}]\n"
+        f"[white]GTK Config Directory:[/white] [dim]{user_config_dir}[/dim]\n"
+        f"[white]XSettings Configuration:[/white] [dim]{xsettings_path}[/dim]",
+        title="[bold #F43F5E]Eclipse OS Desktop Theme Controller[/bold #F43F5E]",
+        border_style=accent
+    ))
 
 def run_step_cmd(cmd, is_root=False):
     full_cmd = cmd if is_root else (["sudo"] + cmd if shutil.which("sudo") else cmd)
@@ -291,9 +404,9 @@ def update_zen_browser(is_root=False):
 
 def cmd_install_devtools(args):
     console.print(Panel(
-        "[bold #06B6D4]Eclipse OS Developer Toolchain Manager[/bold #06B6D4]\n"
+        "[bold #F43F5E]Eclipse OS Developer Toolchain Manager[/bold #F43F5E]\n"
         "[dim white]Automated setup, updates, and verification for LAMP stack, Node.js, Laravel, Flutter, Flame, & Zen Browser[/dim white]",
-        border_style="#8B5CF6"
+        border_style="#9F1239"
     ))
 
     is_root = (os.geteuid() == 0)
@@ -313,9 +426,9 @@ def cmd_install_devtools(args):
     ]
 
     with Progress(
-        SpinnerColumn(style="#06B6D4"),
+        SpinnerColumn(style="#F43F5E"),
         TextColumn("[bold white]{task.description}[/bold white]"),
-        BarColumn(bar_width=30, complete_style="#8B5CF6", finished_style="#06B6D4"),
+        BarColumn(bar_width=30, complete_style="#E11D48", finished_style="#F43F5E"),
         console=console
     ) as progress:
         task = progress.add_task("Configuring developer stack", total=len(steps))
@@ -331,7 +444,7 @@ def cmd_install_devtools(args):
     console.print("\n[bold green]✓ Developer toolchain setup and update sequence finished.[/bold green]\n")
 
     # Print Verification Summary Table
-    ver_table = Table(title="[bold #06B6D4]Developer Stack Verification Summary[/bold #06B6D4]", border_style="#8B5CF6", header_style="bold #06B6D4")
+    ver_table = Table(title="[bold #F43F5E]Developer Stack Verification Summary[/bold #F43F5E]", border_style="#9F1239", header_style="bold #F43F5E")
     ver_table.add_column("Component", style="bold white", width=22)
     ver_table.add_column("Check Command / Path", style="white", width=32)
     ver_table.add_column("Status / Version", style="white")
@@ -344,6 +457,7 @@ def cmd_install_devtools(args):
     ver_table.add_row("Flutter SDK", "flutter --version", get_flutter_status())
     ver_table.add_row("Flame Engine", "Flutter 2D Game Engine", get_flame_status())
     ver_table.add_row("Zen Browser", "/usr/local/bin/zen-browser", get_zen_status())
+    ver_table.add_row("Papirus Icon Theme", "Papirus-Dark", get_icon_theme())
 
     console.print(ver_table)
 
@@ -360,7 +474,7 @@ def main():
 
     # theme
     theme_parser = subparsers.add_parser("theme", help="Update GTK desktop theme accent")
-    theme_parser.add_argument("name", choices=["dark", "neon", "cyan"], help="Theme accent option")
+    theme_parser.add_argument("name", choices=["crimson", "dark", "cyan", "emerald"], help="Theme accent option")
 
     # install-devtools
     devtools_parser = subparsers.add_parser("install-devtools", help="Automated developer toolchain installer and updater")
