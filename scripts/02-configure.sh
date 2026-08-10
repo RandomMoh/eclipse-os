@@ -217,6 +217,21 @@ cp "$PROJECT_ROOT/config/logo/eclipse-logo.png" "$ROOTFS/usr/share/pixmaps/eclip
 mkdir -p "$ROOTFS/usr/share/backgrounds/eclipse"
 cp "$PROJECT_ROOT/config/wallpaper/eclipse-wallpaper.png" "$ROOTFS/usr/share/backgrounds/eclipse/eclipse-wallpaper.png"
 
+# System-wide desktop-base wallpaper overrides
+mkdir -p "$ROOTFS/usr/share/images/desktop-base" "$ROOTFS/usr/share/desktop-base/active-theme/wallpaper/contents/images"
+ln -sf /usr/share/backgrounds/eclipse/eclipse-wallpaper.png "$ROOTFS/usr/share/images/desktop-base/desktop-background"
+ln -sf /usr/share/backgrounds/eclipse/eclipse-wallpaper.png "$ROOTFS/usr/share/images/desktop-base/default"
+ln -sf /usr/share/backgrounds/eclipse/eclipse-wallpaper.png "$ROOTFS/usr/share/desktop-base/active-theme/wallpaper/contents/images/1920x1080.svg"
+
+# System-wide XFCE Panel & XFConf templates (overrides live-config default template)
+mkdir -p "$ROOTFS/etc/xdg/xfce4/panel" "$ROOTFS/etc/xdg/xfce4/xfconf/xfce-perchannel-xml"
+cp "$PROJECT_ROOT/config/xfce/xfce-perchannel-xml/xfce4-panel.xml" "$ROOTFS/etc/xdg/xfce4/panel/default.xml"
+cp "$PROJECT_ROOT/config/xfce/xfce-perchannel-xml/"* "$ROOTFS/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/"
+
+# Disable live-config overrides for desktop-base and xfce panel
+rm -f "$ROOTFS/lib/live/config/0000-desktop-base" "$ROOTFS/lib/live/config/1160-xfce4-desktop" "$ROOTFS/lib/live/config/1170-xfce4-panel" 2>/dev/null || true
+rm -f "$ROOTFS/usr/lib/live/config/0000-desktop-base" "$ROOTFS/usr/lib/live/config/1160-xfce4-desktop" "$ROOTFS/usr/lib/live/config/1170-xfce4-panel" 2>/dev/null || true
+
 # XFCE Config and default GTK/icon settings for skeleton
 mkdir -p "$ROOTFS/etc/skel/.config/xfce4/xfconf"
 cp -r "$PROJECT_ROOT/config/xfce/"* "$ROOTFS/etc/skel/.config/"
