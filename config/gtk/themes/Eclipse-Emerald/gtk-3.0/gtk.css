@@ -1,11 +1,15 @@
 /* Eclipse-Emerald GTK3 Theme */
-@define-color bg_color #18181B;
-@define-color surface_color #27272A;
+@define-color bg_color #061A14;
+@define-color surface_color #0F2D24;
 @define-color primary_accent #10B981;
 @define-color secondary_accent #34D399;
-@define-color text_color #FFFFFF;
-@define-color text_muted #A1A1AA;
-@define-color border_color #3F3F46;
+@define-color text_color #F8FAFC;
+@define-color text_muted #94A3B8;
+@define-color border_color #194436;
+@define-color theme_selected_bg_color #10B981;
+@define-color selected_bg_color #10B981;
+@define-color theme_selected_fg_color #FFFFFF;
+@define-color selected_fg_color #FFFFFF;
 
 * {
     background-clip: padding-box;
@@ -143,7 +147,17 @@ progressbar trough {
     border-radius: 4px;
 }
 
-selection, label:selected, entry selection, textview selection {
+selection, label:selected, entry selection, textview selection,
+XfdesktopIconView.view:selected,
+XfdesktopIconView.view .label:selected,
+.XfdesktopIconView .label:selected,
+.XfdesktopIconView:selected,
+.XfdesktopIconView:selected .label,
+.XfdesktopIconView:selected label,
+.xfdesktop-icon-view:selected,
+.xfdesktop-icon-view:selected label {
     background-color: #10B981;
     color: #FFFFFF;
+    border-radius: 4px;
+    text-shadow: none;
 }

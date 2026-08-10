@@ -6,6 +6,10 @@
 @define-color text_color #F8FAFC;
 @define-color text_muted #94A3B8;
 @define-color border_color #2E1B22;
+@define-color theme_selected_bg_color #E11D48;
+@define-color selected_bg_color #E11D48;
+@define-color theme_selected_fg_color #FFFFFF;
+@define-color selected_fg_color #FFFFFF;
 
 * {
     background-clip: padding-box;
@@ -132,4 +136,26 @@ progressbar progress {
 progressbar trough {
     background-color: #1A1114;
     border-radius: 4px;
+}
+
+/* Rubberband & Desktop Icon Text Selection */
+.rubberband, rubberband, flowbox rubberband, treeview.view rubberband, .view.rubberband, XfdesktopIconView.rubberband {
+    background-color: rgba(225, 29, 72, 0.25);
+    border: 1px solid #E11D48;
+    border-radius: 4px;
+}
+
+selection, label:selected, entry selection, textview selection,
+XfdesktopIconView.view:selected,
+XfdesktopIconView.view .label:selected,
+.XfdesktopIconView .label:selected,
+.XfdesktopIconView:selected,
+.XfdesktopIconView:selected .label,
+.XfdesktopIconView:selected label,
+.xfdesktop-icon-view:selected,
+.xfdesktop-icon-view:selected label {
+    background-color: #E11D48;
+    color: #FFFFFF;
+    border-radius: 4px;
+    text-shadow: none;
 }

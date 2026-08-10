@@ -6,6 +6,10 @@
 @define-color text_color #FFFFFF;
 @define-color text_muted #9A9A9A;
 @define-color border_color #3D3D3D;
+@define-color theme_selected_bg_color #3584E4;
+@define-color selected_bg_color #3584E4;
+@define-color theme_selected_fg_color #FFFFFF;
+@define-color selected_fg_color #FFFFFF;
 
 * {
     background-clip: padding-box;
@@ -143,7 +147,17 @@ progressbar trough {
     border-radius: 4px;
 }
 
-selection, label:selected, entry selection, textview selection {
+selection, label:selected, entry selection, textview selection,
+XfdesktopIconView.view:selected,
+XfdesktopIconView.view .label:selected,
+.XfdesktopIconView .label:selected,
+.XfdesktopIconView:selected,
+.XfdesktopIconView:selected .label,
+.XfdesktopIconView:selected label,
+.xfdesktop-icon-view:selected,
+.xfdesktop-icon-view:selected label {
     background-color: #3584E4;
     color: #FFFFFF;
+    border-radius: 4px;
+    text-shadow: none;
 }
