@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Eclipse OS Boot Splash
+Description=Graphical boot splash theme for Eclipse OS
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/eclipse-splash
+ScriptFile=/usr/share/plymouth/themes/eclipse-splash/eclipse-splash.script
