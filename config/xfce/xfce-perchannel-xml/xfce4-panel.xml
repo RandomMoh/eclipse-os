@@ -4,7 +4,6 @@
   <property name="configver" type="int" value="2"/>
   <property name="panels" type="array">
     <value type="int" value="1"/>
-    <value type="int" value="2"/>
     <property name="panel-1" type="empty">
       <property name="position" type="string" value="p=6;x=0;y=0"/>
       <property name="length" type="uint" value="100"/>
@@ -20,22 +19,6 @@
         <value type="int" value="6"/>
       </property>
     </property>
-    <property name="panel-2" type="empty">
-      <property name="position" type="string" value="p=10;x=0;y=0"/>
-      <property name="length" type="uint" value="40"/>
-      <property name="position-locked" type="bool" value="true"/>
-      <property name="icon-size" type="uint" value="36"/>
-      <property name="size" type="uint" value="48"/>
-      <property name="autohide-behavior" type="uint" value="2"/>
-      <property name="plugin-ids" type="array">
-        <value type="int" value="10"/>
-        <value type="int" value="11"/>
-        <value type="int" value="12"/>
-        <value type="int" value="13"/>
-        <value type="int" value="14"/>
-        <value type="int" value="15"/>
-      </property>
-    </property>
   </property>
   <property name="plugins" type="empty">
     <property name="plugin-1" type="string" value="whiskermenu"/>
@@ -49,35 +32,5 @@
       <property name="digital-format" type="string" value="%Y-%m-%d %H:%M"/>
     </property>
     <property name="plugin-6" type="string" value="actions"/>
-    <property name="plugin-10" type="string" value="launcher">
-      <property name="items" type="array">
-        <value type="string" value="zen-browser.desktop"/>
-      </property>
-    </property>
-    <property name="plugin-11" type="string" value="launcher">
-      <property name="items" type="array">
-        <value type="string" value="kate.desktop"/>
-      </property>
-    </property>
-    <property name="plugin-12" type="string" value="launcher">
-      <property name="items" type="array">
-        <value type="string" value="code.desktop"/>
-      </property>
-    </property>
-    <property name="plugin-13" type="string" value="launcher">
-      <property name="items" type="array">
-        <value type="string" value="eclipse-sysinfo.desktop"/>
-      </property>
-    </property>
-    <property name="plugin-14" type="string" value="launcher">
-      <property name="items" type="array">
-        <value type="string" value="eclipse-installer.desktop"/>
-      </property>
-    </property>
-    <property name="plugin-15" type="string" value="launcher">
-      <property name="items" type="array">
-        <value type="string" value="xfce4-terminal.desktop"/>
-      </property>
-    </property>
   </property>
 </channel>

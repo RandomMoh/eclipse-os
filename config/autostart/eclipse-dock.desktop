@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Eclipse Dock
+Comment=Custom native floating glass dock for Eclipse OS
+Exec=eclipse-dock
+OnlyShowIn=XFCE;GNOME;KDE;
+RunHook=0
+StartupNotify=false
+Terminal=false

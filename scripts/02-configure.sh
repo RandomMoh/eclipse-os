@@ -229,11 +229,17 @@ gtk-theme-name=Eclipse-Fedora
 gtk-icon-theme-name=Papirus-Dark
 EOF
 
-echo -e "${BLUE}[+] Provisioning native Python utilities...${RESET}"
+echo -e "${BLUE}[+] Provisioning native Python utilities and custom dock...${RESET}"
 mkdir -p "$ROOTFS/usr/local/bin"
 cp "$PROJECT_ROOT/src/eclipse-sysinfo" "$ROOTFS/usr/local/bin/"
 cp "$PROJECT_ROOT/src/eclipse-control" "$ROOTFS/usr/local/bin/"
 cp "$PROJECT_ROOT/src/eclipse-installer" "$ROOTFS/usr/local/bin/"
+cp "$PROJECT_ROOT/src/eclipse-dock" "$ROOTFS/usr/local/bin/"
+chmod +x "$ROOTFS/usr/local/bin/"*
+
+mkdir -p "$ROOTFS/etc/xdg/autostart" "$ROOTFS/etc/skel/.config/autostart"
+cp "$PROJECT_ROOT/config/autostart/eclipse-dock.desktop" "$ROOTFS/etc/xdg/autostart/"
+cp "$PROJECT_ROOT/config/autostart/eclipse-dock.desktop" "$ROOTFS/etc/skel/.config/autostart/"
 # Create desktop launchers for Eclipse Utilities
 mkdir -p "$ROOTFS/usr/share/applications"
 cat <<'EOF' > "$ROOTFS/usr/share/applications/eclipse-sysinfo.desktop"

@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import subprocess
+import gi
+gi.require_version('Gtk', '3.0')
+gi.require_version('Gdk', '3.0')
+from gi.repository import Gtk, Gdk, GLib, GdkPixbuf
+
+DOCK_LAUNCHERS = [
+    {"name": "Zen Browser", "cmd": "zen-browser", "icon": "zen-browser", "fallback_icon": "web-browser"},
+    {"name": "Kate", "cmd": "kate", "icon": "kate", "fallback_icon": "accessories-text-editor"},
+    {"name": "VS Code", "cmd": "code", "icon": "vscode", "fallback_icon": "com.visualstudio.code"},
+    {"name": "Files", "cmd": "thunar", "icon": "system-file-manager", "fallback_icon": "folder"},
+    {"name": "Terminal", "cmd": "xfce4-terminal", "icon": "utilities-terminal", "fallback_icon": "terminal"},
+    {"name": "SysInfo", "cmd": "xfce4-terminal --hold -e eclipse-sysinfo", "icon": "utilities-system-monitor", "fallback_icon": "system-search"},
+    {"name": "Installer", "cmd": "xfce4-terminal -e 'sudo eclipse-installer'", "icon": "system-software-install", "fallback_icon": "system-run"},
+]
+
+CSS_STYLE = """
+#eclipse-dock-window {
+    background: transparent;
+}
+
+#eclipse-dock-container {
+    background-color: rgba(30, 30, 30, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 24px;
+    padding: 6px 14px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.dock-item-btn {
+    background: transparent;
+    border: none;
+    padding: 4px 6px;
+    margin: 0 2px;
+    border-radius: 14px;
+    transition: all 120ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.dock-item-btn:hover {
+    background-color: rgba(53, 132, 228, 0.25);
+}
+"""
+
+class DockItem(Gtk.EventBox):
+    def __init__(self, launcher):
+        super().__init__()
+        self.launcher = launcher
+        self.set_visible_window(False)
+
+        self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        self.box.set_halign(Gtk.Align.CENTER)
+
+        self.image = Gtk.Image()
+        self.normal_size = 40
+        self.hover_size = 52
+        self.current_size = self.normal_size
+
+        self.load_icon(self.normal_size)
+        self.box.pack_start(self.image, False, False, 0)
+
+        self.add(self.box)
+        self.set_tooltip_text(launcher["name"])
+
+        self.connect("button-press-event", self.on_click)
+        self.connect("enter-notify-event", self.on_enter)
+        self.connect("leave-notify-event", self.on_leave)
+
+    def load_icon(self, size):
+        icon_theme = Gtk.IconTheme.get_default()
+        icon_name = self.launcher["icon"]
+        if not icon_theme.has_icon(icon_name):
+            icon_name = self.launcher["fallback_icon"]
+
+        try:
+            pixbuf = icon_theme.load_icon(icon_name, size, Gtk.IconLookupFlags.FORCE_SIZE)
+            self.image.set_from_pixbuf(pixbuf)
+        except Exception:
+            self.image.set_from_icon_name("application-x-executable", Gtk.IconSize.DOCK)
+
+    def animate_scale(self, target_size):
+        self.current_size = target_size
+        self.load_icon(target_size)
+
+    def on_enter(self, widget, event):
+        self.animate_scale(self.hover_size)
+        return False
+
+    def on_leave(self, widget, event):
+        self.animate_scale(self.normal_size)
+        return False
+
+    def on_click(self, widget, event):
+        if event.button == 1:
+            try:
+                subprocess.Popen(self.launcher["cmd"], shell=True)
+            except Exception:
+                pass
+        return True
+
+class EclipseDock(Gtk.Window):
+    def __init__(self):
+        super().__init__(type=Gtk.WindowType.TOPLEVEL)
+        self.set_name("eclipse-dock-window")
+        self.set_type_hint(Gdk.WindowTypeHint.DOCK)
+        self.set_keep_above(True)
+        self.set_decorated(False)
+        self.set_resizable(False)
+        self.set_skip_taskbar_hint(True)
+        self.set_skip_pager_hint(True)
+
+        screen = self.get_screen()
+        visual = screen.get_rgba_visual()
+        if visual:
+            self.set_visual(visual)
+
+        self.apply_css()
+
+        self.container = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        self.container.set_name("eclipse-dock-container")
+
+        for item_data in DOCK_LAUNCHERS:
+            item = DockItem(item_data)
+            self.container.pack_start(item, False, False, 0)
+
+        main_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        main_box.pack_start(self.container, False, False, 0)
+        self.add(main_box)
+
+        self.connect("realize", self.on_realize)
+        self.connect("destroy", Gtk.main_quit)
+
+    def apply_css(self):
+        provider = Gtk.CssProvider()
+        provider.load_from_data(CSS_STYLE.encode("utf-8"))
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
+    def on_realize(self, widget):
+        screen = self.get_screen()
+        monitor_geom = screen.get_monitor_geometry(screen.get_primary_monitor() or 0)
+        
+        self.show_all()
+        req_w, req_h = self.get_size()
+        
+        x = monitor_geom.x + (monitor_geom.width - req_w) // 2
+        y = monitor_geom.y + monitor_geom.height - req_h - 12
+        self.move(x, y)
+
+def main():
+    dock = EclipseDock()
+    Gtk.main()
+
+if __name__ == "__main__":
+    main()
