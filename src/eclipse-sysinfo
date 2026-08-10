@@ -108,23 +108,23 @@ def get_network_ips():
 def render_meter(pct, width=20):
     filled = max(0, min(width, int(round(width * (pct / 100)))))
     empty = width - filled
-    return f"[#E11D48]{'█' * filled}[/#E11D48][#333344]{'░' * empty}[/#333344] [#F43F5E]{pct:.1f}%[/#F43F5E]"
+    return f"[#3584E4]{'█' * filled}[/#3584E4][#2D2D2D]{'░' * empty}[/#2D2D2D] [#62A0EA]{pct:.1f}%[/#62A0EA]"
 
 def main():
     console = Console()
 
     logo = (
-        "[#E11D48]  ██████╗  ██████╗██╗     ██████╗ ███████╗███████╗    ██████╗ ███████╗[/#E11D48]\n"
-        "[#E11D48]  ██╔═══╝ ██╔════╝██║     ██╔══██╗██╔════╝██╔════╝   ██╔═══██╗██╔════╝[/#E11D48]\n"
-        "[#F43F5E]  █████╗  ██║     ██║     ██████╔╝███████╗█████╗     ██║   ██║███████╗[/#F43F5E]\n"
-        "[#F43F5E]  ██╔══╝  ██║     ██║     ██╔═══╝ ╚════██║██╔══╝     ██║   ██║╚════██║[/#F43F5E]\n"
-        "[#E11D48]  ███████╗╚██████╗███████╗██║     ███████║███████╗   ╚██████╔╝███████║[/#E11D48]\n"
-        "[#E11D48]  ╚══════╝ ╚═════╝╚══════╝╚═╝     ╚══════╝╚══════╝    ╚═════╝ ╚══════╝[/#E11D48]"
+        "[#3584E4]  ██████╗  ██████╗██╗     ██████╗ ███████╗███████╗    ██████╗ ███████╗[/#3584E4]\n"
+        "[#3584E4]  ██╔═══╝ ██╔════╝██║     ██╔══██╗██╔════╝██╔════╝   ██╔═══██╗██╔════╝[/#3584E4]\n"
+        "[#62A0EA]  █████╗  ██║     ██║     ██████╔╝███████╗█████╗     ██║   ██║███████╗[/#62A0EA]\n"
+        "[#62A0EA]  ██╔══╝  ██║     ██║     ██╔═══╝ ╚════██║██╔══╝     ██║   ██║╚════██║[/#62A0EA]\n"
+        "[#3584E4]  ███████╗╚██████╗███████╗██║     ███████║███████╗   ╚██████╔╝███████╗[/#3584E4]\n"
+        "[#3584E4]  ╚══════╝ ╚═════╝╚══════╝╚═╝     ╚══════╝╚══════╝    ╚═════╝ ╚══════╝[/#3584E4]"
     )
 
     header_panel = Panel(
-        Align.center(logo + "\n\n[bold #F43F5E]Eclipse OS v1.0 Syzygy[/bold #F43F5E] | [italic #F8FAFC]Crimson Obsidian Edition[/italic #F8FAFC]"),
-        border_style="#9F1239",
+        Align.center(logo + "\n\n[bold #62A0EA]Eclipse OS v1.0 Syzygy[/bold #62A0EA] | [italic #FFFFFF]Fedora Edition[/italic #FFFFFF]"),
+        border_style="#1C71D8",
         padding=(1, 2)
     )
     console.print(header_panel)
@@ -132,12 +132,12 @@ def main():
     used_mb, total_mb, mem_pct = get_memory_info()
     used_gb, total_gb, disk_pct = get_disk_info()
     net_ips = get_network_ips()
-    net_str = ", ".join([f"[bold #F43F5E]{iface}[/bold #F43F5E]: {ip}" for iface, ip in net_ips.items()])
+    net_str = ", ".join([f"[bold #62A0EA]{iface}[/bold #62A0EA]: {ip}" for iface, ip in net_ips.items()])
 
-    table = Table(title="[bold #F43F5E]System Metrics & Hardware Profile[/bold #F43F5E]", border_style="#9F1239", header_style="bold #F43F5E")
-    table.add_column("Property", style="bold #F8FAFC", width=18)
-    table.add_column("Specification / Value", style="#F8FAFC", width=36)
-    table.add_column("Resource Usage", style="#F8FAFC", width=30)
+    table = Table(title="[bold #62A0EA]System Metrics & Hardware Profile[/bold #62A0EA]", border_style="#1C71D8", header_style="bold #62A0EA")
+    table.add_column("Property", style="bold #FFFFFF", width=18)
+    table.add_column("Specification / Value", style="#FFFFFF", width=36)
+    table.add_column("Resource Usage", style="#FFFFFF", width=30)
 
     table.add_row("OS Name", get_os_name(), "[dim]System Kernel[/dim]")
     table.add_row("Kernel Version", get_kernel_version(), f"[dim]{platform.machine()}[/dim]")
@@ -152,9 +152,9 @@ def main():
 
     # Use rich.progress.Progress to demonstrate system scan / metrics bar
     with Progress(
-        TextColumn("[bold #F43F5E]{task.description}[/bold #F43F5E]"),
-        BarColumn(bar_width=40, complete_style="#E11D48", finished_style="#F43F5E"),
-        TextColumn("[bold #F8FAFC]{task.percentage:>3.0f}%[/bold #F8FAFC]"),
+        TextColumn("[bold #62A0EA]{task.description}[/bold #62A0EA]"),
+        BarColumn(bar_width=40, complete_style="#3584E4", finished_style="#62A0EA"),
+        TextColumn("[bold #FFFFFF]{task.percentage:>3.0f}%[/bold #FFFFFF]"),
         console=console,
         transient=True
     ) as progress:

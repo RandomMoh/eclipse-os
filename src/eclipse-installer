@@ -91,9 +91,9 @@ def main():
     args = parser.parse_args()
 
     console.print(Panel(
-        "[bold #E11D48]Eclipse OS Live-to-Disk Installer[/bold #E11D48]\n"
-        "[italic #F8FAFC]Syzygy v1.0 | Crimson Obsidian Edition[/italic #F8FAFC]",
-        border_style="#9F1239",
+        "[bold #3584E4]Eclipse OS Live-to-Disk Installer[/bold #3584E4]\n"
+        "[italic #FFFFFF]Syzygy v1.0 | Fedora Edition[/italic #FFFFFF]",
+        border_style="#1C71D8",
         padding=(1, 2)
     ))
 
@@ -107,9 +107,9 @@ def main():
         sys.exit(1)
 
     devices = scan_block_devices()
-    dev_table = Table(title="[bold #F43F5E]Detected Block Devices[/bold #F43F5E]", border_style="#9F1239", header_style="bold #F43F5E")
-    dev_table.add_column("Device Node", style="bold #F8FAFC")
-    dev_table.add_column("Capacity", style="#F43F5E")
+    dev_table = Table(title="[bold #62A0EA]Detected Block Devices[/bold #62A0EA]", border_style="#1C71D8", header_style="bold #62A0EA")
+    dev_table.add_column("Device Node", style="bold #FFFFFF")
+    dev_table.add_column("Capacity", style="#62A0EA")
     dev_table.add_column("Model / Description", style="dim white")
 
     valid_choices = []
@@ -120,7 +120,7 @@ def main():
     console.print(dev_table)
 
     selected_choice = Prompt.ask(
-        "[bold #F43F5E]Select target storage device (number or device path)[/bold #F43F5E]",
+        "[bold #62A0EA]Select target storage device (number or device path)[/bold #62A0EA]",
         choices=valid_choices,
         default="1"
     )
@@ -131,22 +131,22 @@ def main():
     else:
         target_disk = selected_choice
 
-    hostname = Prompt.ask("[bold #F43F5E]Target System Hostname[/bold #F43F5E]", default="eclipse-os")
-    username = Prompt.ask("[bold #F43F5E]Admin Username[/bold #F43F5E]", default="eclipse")
-    password = ask_password("[bold #F43F5E]User Password[/bold #F43F5E]")
-    timezone = Prompt.ask("[bold #F43F5E]System Timezone[/bold #F43F5E]", default="UTC")
+    hostname = Prompt.ask("[bold #62A0EA]Target System Hostname[/bold #62A0EA]", default="eclipse-os")
+    username = Prompt.ask("[bold #62A0EA]Admin Username[/bold #62A0EA]", default="eclipse")
+    password = ask_password("[bold #62A0EA]User Password[/bold #62A0EA]")
+    timezone = Prompt.ask("[bold #62A0EA]System Timezone[/bold #62A0EA]", default="UTC")
 
     efi_part, root_part = get_partition_names(target_disk)
 
     console.print("\n")
     console.print(Panel(
         f"[bold red]WARNING: ALL DATA ON {target_disk} WILL BE PERMANENTLY DESTROYED![/bold red]\n\n"
-        f"[bold white]Target Storage Disk:[/bold white] [bold #F43F5E]{target_disk}[/bold #F43F5E]\n"
-        f"[bold white]EFI Boot Partition:[/bold white] [#F43F5E]{efi_part}[/#F43F5E] (512MB FAT32)\n"
-        f"[bold white]Root System Partition:[/bold white] [#F43F5E]{root_part}[/#F43F5E] (Ext4)\n"
-        f"[bold white]System Hostname:[/bold white] [#F43F5E]{hostname}[/#F43F5E]\n"
-        f"[bold white]Admin User:[/bold white] [#F43F5E]{username}[/#F43F5E]\n"
-        f"[bold white]Timezone:[/bold white] [#F43F5E]{timezone}[/#F43F5E]",
+        f"[bold white]Target Storage Disk:[/bold white] [bold #62A0EA]{target_disk}[/bold #62A0EA]\n"
+        f"[bold white]EFI Boot Partition:[/bold white] [#62A0EA]{efi_part}[/#62A0EA] (512MB FAT32)\n"
+        f"[bold white]Root System Partition:[/bold white] [#62A0EA]{root_part}[/#62A0EA] (Ext4)\n"
+        f"[bold white]System Hostname:[/bold white] [#62A0EA]{hostname}[/#62A0EA]\n"
+        f"[bold white]Admin User:[/bold white] [#62A0EA]{username}[/#62A0EA]\n"
+        f"[bold white]Timezone:[/bold white] [#62A0EA]{timezone}[/#62A0EA]",
         title="[bold yellow]Confirm Installation Configuration[/bold yellow]",
         border_style="yellow"
     ))
@@ -172,12 +172,12 @@ def main():
         ("Unmounting Target File Systems", ["umount", "-R", "/mnt/target"])
     ]
 
-    console.print("\n[bold #F43F5E]Starting Eclipse OS Disk Installation...[/bold #F43F5E]\n")
+    console.print("\n[bold #62A0EA]Starting Eclipse OS Disk Installation...[/bold #62A0EA]\n")
 
     with Progress(
-        SpinnerColumn(style="#F43F5E"),
+        SpinnerColumn(style="#62A0EA"),
         TextColumn("[bold white]{task.description}[/bold white]"),
-        BarColumn(bar_width=35, complete_style="#E11D48", finished_style="#F43F5E"),
+        BarColumn(bar_width=35, complete_style="#3584E4", finished_style="#62A0EA"),
         console=console
     ) as progress:
         install_task = progress.add_task("Installing OS", total=len(steps))
@@ -195,8 +195,8 @@ def main():
     console.print(Panel(
         "[bold green]✓ Eclipse OS v1.0 Syzygy installed successfully![/bold green]\n\n"
         "[white]You may now reboot your system and remove the installation medium.[/white]",
-        title="[bold #F43F5E]Installation Complete[/bold #F43F5E]",
-        border_style="#E11D48"
+        title="[bold #62A0EA]Installation Complete[/bold #62A0EA]",
+        border_style="#1C71D8"
     ))
 
 if __name__ == "__main__":

@@ -15,23 +15,23 @@ from rich.text import Text
 console = Console()
 
 THEME_CONFIGS = {
-    "crimson": {
-        "accent": "#E11D48",
-        "highlight": "#F43F5E",
-        "name": "Crimson Obsidian Accent",
-        "folder": "Eclipse-Crimson",
+    "fedora": {
+        "accent": "#3584E4",
+        "highlight": "#62A0EA",
+        "name": "Fedora Blue Accent",
+        "folder": "Eclipse-Fedora",
     },
-    "dark": {
-        "accent": "#4C1D95",
-        "highlight": "#6D28D9",
-        "name": "Obsidian Dark Accent",
-        "folder": "Eclipse-Dark",
+    "adwaita": {
+        "accent": "#24292E",
+        "highlight": "#3A3D41",
+        "name": "Adwaita Dark Accent",
+        "folder": "Eclipse-AdwaitaDark",
     },
     "cyan": {
         "accent": "#06B6D4",
         "highlight": "#22D3EE",
         "name": "Electric Cyan Accent",
-        "folder": "Eclipse-Cyan",
+        "folder": "Eclipse-CyberCyan",
     },
     "emerald": {
         "accent": "#10B981",
@@ -146,12 +146,16 @@ def get_active_theme():
         try:
             with open(xsettings_path, "r") as f:
                 content = f.read()
-                if "Eclipse-Crimson" in content:
-                    return "Eclipse-Crimson (#E11D48)"
+                if "Eclipse-Fedora" in content:
+                    return "Eclipse-Fedora (#3584E4)"
+                elif "Eclipse-AdwaitaDark" in content:
+                    return "Eclipse-AdwaitaDark (#24292E)"
+                elif "Eclipse-CyberCyan" in content or "Eclipse-Cyan" in content:
+                    return "Eclipse-CyberCyan (#06B6D4)"
                 elif "Eclipse-Emerald" in content:
                     return "Eclipse-Emerald (#10B981)"
-                elif "Eclipse-Cyan" in content:
-                    return "Eclipse-Cyan (#06B6D4)"
+                elif "Eclipse-Crimson" in content:
+                    return "Eclipse-Crimson (#E11D48)"
                 elif "Eclipse-Dark" in content:
                     return "Eclipse-Dark (#4C1D95)"
         except Exception:
@@ -162,31 +166,31 @@ def get_active_theme():
             try:
                 with open(path, "r") as f:
                     content = f.read()
-                    if "#E11D48" in content or "crimson" in content.lower():
-                        return "Eclipse-Crimson (#E11D48)"
+                    if "#3584E4" in content or "fedora" in content.lower():
+                        return "Eclipse-Fedora (#3584E4)"
+                    elif "#24292E" in content or "adwaita" in content.lower():
+                        return "Eclipse-AdwaitaDark (#24292E)"
+                    elif "#06B6D4" in content or "cyan" in content.lower():
+                        return "Eclipse-CyberCyan (#06B6D4)"
                     elif "#10B981" in content or "emerald" in content.lower():
                         return "Eclipse-Emerald (#10B981)"
-                    elif "#06B6D4" in content or "cyan" in content.lower():
-                        return "Eclipse-Cyan (#06B6D4)"
-                    elif "#4C1D95" in content or "dark" in content.lower():
-                        return "Eclipse-Dark (#4C1D95)"
             except Exception:
                 pass
-    return "Eclipse-Crimson (Default Crimson Obsidian)"
+    return "Eclipse-Fedora (Default Fedora Blue)"
 
 def cmd_status(args):
-    console.print(Panel("[bold #F43F5E]Eclipse OS System Controller[/bold #F43F5E]\n[dim white]System Diagnostic & Developer Stack Monitor[/dim white]", border_style="#9F1239"))
+    console.print(Panel("[bold #62A0EA]Eclipse OS System Controller[/bold #62A0EA]\n[dim white]System Diagnostic & Developer Stack Monitor[/dim white]", border_style="#1C71D8"))
 
     # Load average
     try:
         l1, l5, l15 = os.getloadavg()
-        load_str = f"1m: [bold #F43F5E]{l1:.2f}[/bold #F43F5E] | 5m: [bold #F43F5E]{l5:.2f}[/bold #F43F5E] | 15m: [bold #F43F5E]{l15:.2f}[/bold #F43F5E]"
+        load_str = f"1m: [bold #62A0EA]{l1:.2f}[/bold #62A0EA] | 5m: [bold #62A0EA]{l5:.2f}[/bold #62A0EA] | 15m: [bold #62A0EA]{l15:.2f}[/bold #62A0EA]"
     except Exception:
         load_str = "Unavailable"
 
     # Services
     services = ["lightdm", "NetworkManager", "dbus", "ssh", "systemd-journald", "apache2", "mariadb"]
-    service_table = Table(title="[bold #F43F5E]Core Services Status[/bold #F43F5E]", border_style="#9F1239", header_style="bold #F43F5E")
+    service_table = Table(title="[bold #62A0EA]Core Services Status[/bold #62A0EA]", border_style="#1C71D8", header_style="bold #62A0EA")
     service_table.add_column("Service", style="bold white")
     service_table.add_column("Status", style="white")
 
@@ -194,7 +198,7 @@ def cmd_status(args):
         service_table.add_row(srv, check_service_status(srv))
 
     # Developer Stack & Toolchain Table
-    stack_table = Table(title="[bold #F43F5E]Developer Stack & Desktop Environment Status[/bold #F43F5E]", border_style="#9F1239", header_style="bold #F43F5E")
+    stack_table = Table(title="[bold #62A0EA]Developer Stack & Desktop Environment Status[/bold #62A0EA]", border_style="#1C71D8", header_style="bold #62A0EA")
     stack_table.add_column("Component", style="bold white", width=22)
     stack_table.add_column("Check / Binary Path", style="white", width=32)
     stack_table.add_column("Status / Version", style="white")
@@ -212,19 +216,19 @@ def cmd_status(args):
     # Overall Health Panel
     health_text = (
         f"[bold white]Overall Health Status:[/bold white] [bold green]● OPERATIONAL[/bold green]\n"
-        f"[bold white]Active GTK Theme:[/bold white] [bold #E11D48]{get_active_theme()}[/bold #E11D48]\n"
-        f"[bold white]Icon Theme Status:[/bold white] [bold #F43F5E]Papirus-Dark[/bold #F43F5E]\n"
+        f"[bold white]Active GTK Theme:[/bold white] [bold #3584E4]{get_active_theme()}[/bold #3584E4]\n"
+        f"[bold white]Icon Theme Status:[/bold white] [bold #62A0EA]Papirus-Dark[/bold #62A0EA]\n"
         f"[bold white]System Load Average:[/bold white] {load_str}"
     )
 
-    console.print(Panel(health_text, title="[bold #F43F5E]System Summary[/bold #F43F5E]", border_style="#9F1239"))
+    console.print(Panel(health_text, title="[bold #62A0EA]System Summary[/bold #62A0EA]", border_style="#1C71D8"))
     console.print(service_table)
     console.print(stack_table)
 
 def cmd_theme(args):
     theme_choice = args.name.lower()
     if theme_choice not in THEME_CONFIGS:
-        console.print(f"[bold red]Error:[/bold red] Unknown theme '{theme_choice}'. Options: crimson, dark, cyan, emerald")
+        console.print(f"[bold red]Error:[/bold red] Unknown theme '{theme_choice}'. Options: fedora, adwaita, cyan, emerald")
         sys.exit(1)
 
     cfg = THEME_CONFIGS[theme_choice]
@@ -325,7 +329,7 @@ def cmd_theme(args):
         f"[white]Active Accent:[/white] [{accent}]{cfg['name']} ({accent})[/{accent}]\n"
         f"[white]GTK Config Directory:[/white] [dim]{user_config_dir}[/dim]\n"
         f"[white]XSettings Configuration:[/white] [dim]{xsettings_path}[/dim]",
-        title="[bold #F43F5E]Eclipse OS Desktop Theme Controller[/bold #F43F5E]",
+        title="[bold #62A0EA]Eclipse OS Desktop Theme Controller[/bold #62A0EA]",
         border_style=accent
     ))
 
@@ -404,9 +408,9 @@ def update_zen_browser(is_root=False):
 
 def cmd_install_devtools(args):
     console.print(Panel(
-        "[bold #F43F5E]Eclipse OS Developer Toolchain Manager[/bold #F43F5E]\n"
+        "[bold #62A0EA]Eclipse OS Developer Toolchain Manager[/bold #62A0EA]\n"
         "[dim white]Automated setup, updates, and verification for LAMP stack, Node.js, Laravel, Flutter, Flame, & Zen Browser[/dim white]",
-        border_style="#9F1239"
+        border_style="#1C71D8"
     ))
 
     is_root = (os.geteuid() == 0)
@@ -426,9 +430,9 @@ def cmd_install_devtools(args):
     ]
 
     with Progress(
-        SpinnerColumn(style="#F43F5E"),
+        SpinnerColumn(style="#62A0EA"),
         TextColumn("[bold white]{task.description}[/bold white]"),
-        BarColumn(bar_width=30, complete_style="#E11D48", finished_style="#F43F5E"),
+        BarColumn(bar_width=30, complete_style="#3584E4", finished_style="#62A0EA"),
         console=console
     ) as progress:
         task = progress.add_task("Configuring developer stack", total=len(steps))
@@ -444,7 +448,7 @@ def cmd_install_devtools(args):
     console.print("\n[bold green]✓ Developer toolchain setup and update sequence finished.[/bold green]\n")
 
     # Print Verification Summary Table
-    ver_table = Table(title="[bold #F43F5E]Developer Stack Verification Summary[/bold #F43F5E]", border_style="#9F1239", header_style="bold #F43F5E")
+    ver_table = Table(title="[bold #62A0EA]Developer Stack Verification Summary[/bold #62A0EA]", border_style="#1C71D8", header_style="bold #62A0EA")
     ver_table.add_column("Component", style="bold white", width=22)
     ver_table.add_column("Check Command / Path", style="white", width=32)
     ver_table.add_column("Status / Version", style="white")
@@ -474,7 +478,7 @@ def main():
 
     # theme
     theme_parser = subparsers.add_parser("theme", help="Update GTK desktop theme accent")
-    theme_parser.add_argument("name", choices=["crimson", "dark", "cyan", "emerald"], help="Theme accent option")
+    theme_parser.add_argument("name", choices=["fedora", "adwaita", "cyan", "emerald"], help="Theme accent option")
 
     # install-devtools
     devtools_parser = subparsers.add_parser("install-devtools", help="Automated developer toolchain installer and updater")
