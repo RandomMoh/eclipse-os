@@ -272,6 +272,19 @@ echo -e "${BLUE}[+] Provisioning Plymouth Boot Splash Theme...${RESET}"
 mkdir -p "$ROOTFS/usr/share/plymouth/themes"
 cp -r "$PROJECT_ROOT/config/plymouth/eclipse-splash" "$ROOTFS/usr/share/plymouth/themes/"
 
+# Configure Plymouth Daemon & initramfs Framebuffer
+mkdir -p "$ROOTFS/etc/plymouth" "$ROOTFS/etc/initramfs-tools/conf.d"
+cat <<'EOF' > "$ROOTFS/etc/plymouth/plymouthd.conf"
+[Daemon]
+Theme=eclipse-splash
+ShowDelay=0
+DeviceTimeout=8
+EOF
+
+cat <<'EOF' > "$ROOTFS/etc/initramfs-tools/conf.d/plymouth"
+FRAMEBUFFER=y
+EOF
+
 chroot "$ROOTFS" plymouth-set-default-theme eclipse-splash -R 2>/dev/null || true
 chroot "$ROOTFS" update-initramfs -u -k all 2>/dev/null || true
 
