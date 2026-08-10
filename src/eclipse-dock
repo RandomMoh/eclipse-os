@@ -24,8 +24,8 @@ CSS_STYLE = """
 }
 
 #eclipse-dock-container {
-    background-color: rgba(30, 30, 30, 0.88);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background-color: rgba(26, 27, 38, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 24px;
     padding: 6px 14px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -41,7 +41,7 @@ CSS_STYLE = """
 }
 
 .dock-item-btn:hover {
-    background-color: rgba(53, 132, 228, 0.25);
+    background-color: rgba(53, 132, 228, 0.28);
 }
 """
 
@@ -71,14 +71,19 @@ class DockItem(Gtk.EventBox):
 
     def load_icon(self, size):
         icon_theme = Gtk.IconTheme.get_default()
-        icon_name = self.launcher["icon"]
-        if not icon_theme.has_icon(icon_name):
-            icon_name = self.launcher["fallback_icon"]
+        pixbuf = None
+        for name in (self.launcher["icon"], self.launcher["fallback_icon"], "application-x-executable", "dialog-information"):
+            try:
+                if icon_theme.has_icon(name):
+                    pixbuf = icon_theme.load_icon(name, size, Gtk.IconLookupFlags.FORCE_SIZE)
+                    if pixbuf:
+                        break
+            except Exception:
+                pass
 
-        try:
-            pixbuf = icon_theme.load_icon(icon_name, size, Gtk.IconLookupFlags.FORCE_SIZE)
+        if pixbuf:
             self.image.set_from_pixbuf(pixbuf)
-        except Exception:
+        else:
             self.image.set_from_icon_name("application-x-executable", Gtk.IconSize.DOCK)
 
     def animate_scale(self, target_size):
@@ -105,12 +110,13 @@ class EclipseDock(Gtk.Window):
     def __init__(self):
         super().__init__(type=Gtk.WindowType.TOPLEVEL)
         self.set_name("eclipse-dock-window")
-        self.set_type_hint(Gdk.WindowTypeHint.UTILITY)
+        self.set_type_hint(Gdk.WindowTypeHint.NORMAL)
         self.set_keep_above(True)
         self.set_decorated(False)
         self.set_resizable(False)
         self.set_skip_taskbar_hint(True)
         self.set_skip_pager_hint(True)
+        self.set_accept_focus(False)
 
         screen = self.get_screen()
         visual = screen.get_rgba_visual()
@@ -123,8 +129,11 @@ class EclipseDock(Gtk.Window):
         self.container.set_name("eclipse-dock-container")
 
         for item_data in DOCK_LAUNCHERS:
-            item = DockItem(item_data)
-            self.container.pack_start(item, False, False, 0)
+            try:
+                item = DockItem(item_data)
+                self.container.pack_start(item, False, False, 0)
+            except Exception:
+                pass
 
         main_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
         main_box.pack_start(self.container, False, False, 0)
@@ -149,24 +158,31 @@ class EclipseDock(Gtk.Window):
         self.reposition()
 
     def reposition(self):
-        screen = self.get_screen()
-        display = screen.get_display()
-        monitor = display.get_primary_monitor() or display.get_monitor(0)
-        geom = monitor.get_geometry()
+        try:
+            screen = self.get_screen()
+            display = screen.get_display()
+            monitor = display.get_primary_monitor() or display.get_monitor(0)
+            geom = monitor.get_geometry()
 
-        alloc = self.get_allocation()
-        w = alloc.width if alloc.width > 50 else 420
-        h = alloc.height if alloc.height > 20 else 64
+            alloc = self.get_allocation()
+            w = alloc.width if alloc.width > 50 else 420
+            h = alloc.height if alloc.height > 20 else 64
 
-        x = geom.x + (geom.width - w) // 2
-        y = geom.y + geom.height - h - 16
-        self.move(x, y)
-        self.set_keep_above(True)
+            x = geom.x + (geom.width - w) // 2
+            y = geom.y + geom.height - h - 16
+            self.move(x, y)
+            self.set_keep_above(True)
+        except Exception:
+            pass
         return False
 
 def main():
-    dock = EclipseDock()
-    Gtk.main()
+    try:
+        dock = EclipseDock()
+        Gtk.main()
+    except Exception as e:
+        with open("/tmp/eclipse-dock.log", "a") as f:
+            f.write(f"Dock crash: {e}\n")
 
 if __name__ == "__main__":
     main()
