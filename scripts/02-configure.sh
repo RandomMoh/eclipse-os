@@ -94,6 +94,9 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
     dbus-x11 \
     x11-xserver-utils \
     desktop-base \
+    plymouth \
+    plymouth-themes \
+    initramfs-tools \
     xfce4 \
     xfce4-goodies \
     papirus-icon-theme \
@@ -109,8 +112,29 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
     e2fsprogs \
     grub-efi-amd64-bin \
     grub-pc-bin \
-    xfce4-terminal \
     kate \
+    build-essential \
+    gcc \
+    g++ \
+    make \
+    cmake \
+    gdb \
+    valgrind \
+    clang \
+    llvm \
+    golang \
+    cargo \
+    rustc \
+    podman \
+    podman-docker \
+    flatpak \
+    ripgrep \
+    fzf \
+    jq \
+    bat \
+    strace \
+    lsof \
+    net-tools \
     apache2 \
     php \
     php-cli \
@@ -244,13 +268,21 @@ gtk-theme-name=Eclipse-Fedora
 gtk-icon-theme-name=Papirus-Dark
 EOF
 
-echo -e "${BLUE}[+] Provisioning native Python utilities and custom dock...${RESET}"
+echo -e "${BLUE}[+] Provisioning Plymouth Boot Splash Theme...${RESET}"
+mkdir -p "$ROOTFS/usr/share/plymouth/themes"
+cp -r "$PROJECT_ROOT/config/plymouth/eclipse-splash" "$ROOTFS/usr/share/plymouth/themes/"
+
+chroot "$ROOTFS" plymouth-set-default-theme eclipse-splash -R 2>/dev/null || true
+chroot "$ROOTFS" update-initramfs -u -k all 2>/dev/null || true
+
+echo -e "${BLUE}[+] Provisioning native Python utilities, dnf CLI, and custom dock...${RESET}"
 mkdir -p "$ROOTFS/usr/local/bin"
 cp "$PROJECT_ROOT/src/eclipse-sysinfo" "$ROOTFS/usr/local/bin/"
 cp "$PROJECT_ROOT/src/eclipse-control" "$ROOTFS/usr/local/bin/"
 cp "$PROJECT_ROOT/src/eclipse-installer" "$ROOTFS/usr/local/bin/"
 cp "$PROJECT_ROOT/src/eclipse-dock" "$ROOTFS/usr/local/bin/"
-chmod +x "$ROOTFS/usr/local/bin/eclipse-sysinfo" "$ROOTFS/usr/local/bin/eclipse-control" "$ROOTFS/usr/local/bin/eclipse-installer" "$ROOTFS/usr/local/bin/eclipse-dock"
+cp "$PROJECT_ROOT/src/dnf" "$ROOTFS/usr/local/bin/"
+chmod +x "$ROOTFS/usr/local/bin/eclipse-sysinfo" "$ROOTFS/usr/local/bin/eclipse-control" "$ROOTFS/usr/local/bin/eclipse-installer" "$ROOTFS/usr/local/bin/eclipse-dock" "$ROOTFS/usr/local/bin/dnf"
 
 mkdir -p "$ROOTFS/etc/xdg/autostart" "$ROOTFS/etc/skel/.config/autostart"
 cp "$PROJECT_ROOT/config/autostart/eclipse-dock.desktop" "$ROOTFS/etc/xdg/autostart/"
