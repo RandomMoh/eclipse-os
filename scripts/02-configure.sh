@@ -235,7 +235,7 @@ cp "$PROJECT_ROOT/src/eclipse-sysinfo" "$ROOTFS/usr/local/bin/"
 cp "$PROJECT_ROOT/src/eclipse-control" "$ROOTFS/usr/local/bin/"
 cp "$PROJECT_ROOT/src/eclipse-installer" "$ROOTFS/usr/local/bin/"
 cp "$PROJECT_ROOT/src/eclipse-dock" "$ROOTFS/usr/local/bin/"
-chmod +x "$ROOTFS/usr/local/bin/"*
+chmod +x "$ROOTFS/usr/local/bin/eclipse-sysinfo" "$ROOTFS/usr/local/bin/eclipse-control" "$ROOTFS/usr/local/bin/eclipse-installer" "$ROOTFS/usr/local/bin/eclipse-dock"
 
 mkdir -p "$ROOTFS/etc/xdg/autostart" "$ROOTFS/etc/skel/.config/autostart"
 cp "$PROJECT_ROOT/config/autostart/eclipse-dock.desktop" "$ROOTFS/etc/xdg/autostart/"
