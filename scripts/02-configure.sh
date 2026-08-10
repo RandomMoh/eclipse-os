@@ -94,15 +94,11 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
     dbus-x11 \
     x11-xserver-utils \
     desktop-base \
-    kde-plasma-desktop \
-    plasma-workspace \
-    sddm \
-    dolphin \
-    konsole \
-    spectacle \
-    ark \
-    gwenview \
+    xfce4 \
+    xfce4-goodies \
     papirus-icon-theme \
+    lightdm \
+    xfce4-terminal \
     sudo \
     python3 \
     python3-pip \
@@ -271,7 +267,7 @@ cat <<'EOF' > "$ROOTFS/usr/share/applications/eclipse-sysinfo.desktop"
 Version=1.0
 Name=Eclipse SysInfo
 Comment=Display system metrics and Eclipse OS specs
-Exec=konsole --hold -e eclipse-sysinfo
+Exec=xfce4-terminal --hold -e eclipse-sysinfo
 Icon=utilities-system-monitor
 Terminal=false
 Type=Application
@@ -283,7 +279,7 @@ cat <<'EOF' > "$ROOTFS/usr/share/applications/eclipse-installer.desktop"
 Version=1.0
 Name=Eclipse OS Installer
 Comment=Install Eclipse OS to target disk
-Exec=konsole -e "sudo eclipse-installer"
+Exec=xfce4-terminal -e "sudo eclipse-installer"
 Icon=system-software-install
 Terminal=false
 Type=Application
@@ -319,23 +315,24 @@ mkdir -p "$ROOTFS/etc/sudoers.d"
 echo "eclipse ALL=(ALL) NOPASSWD: ALL" > "$ROOTFS/etc/sudoers.d/eclipse"
 chmod 0440 "$ROOTFS/etc/sudoers.d/eclipse"
 
-# Configure SDDM autologin
-echo -e "${BLUE}[+] Configuring SDDM autologin for KDE Plasma...${RESET}"
-mkdir -p "$ROOTFS/etc/sddm.conf.d"
-cat <<'EOF' > "$ROOTFS/etc/sddm.conf.d/autologin.conf"
-[Autologin]
-User=eclipse
-Session=plasma
-Relogin=false
-
-[Theme]
-Current=breeze
+# Configure LightDM autologin
+echo -e "${BLUE}[+] Configuring LightDM autologin...${RESET}"
+mkdir -p "$ROOTFS/etc/lightdm/lightdm.conf.d"
+cat <<'EOF' > "$ROOTFS/etc/lightdm/lightdm.conf.d/80-autologin.conf"
+[Seat:*]
+autologin-user=eclipse
+autologin-user-timeout=0
 EOF
 
-# Set systemd graphical target and enable SDDM service
-echo -e "${BLUE}[+] Enabling SDDM display manager and setting graphical default target...${RESET}"
+if [[ -f "$ROOTFS/etc/lightdm/lightdm.conf" ]]; then
+    sed -i 's/^#\?autologin-user=.*/autologin-user=eclipse/' "$ROOTFS/etc/lightdm/lightdm.conf"
+    sed -i 's/^#\?autologin-user-timeout=.*/autologin-user-timeout=0/' "$ROOTFS/etc/lightdm/lightdm.conf"
+fi
+
+# Set systemd graphical target and enable LightDM service
+echo -e "${BLUE}[+] Enabling LightDM and setting graphical default target...${RESET}"
 chroot "$ROOTFS" systemctl set-default graphical.target
-chroot "$ROOTFS" systemctl enable sddm
+chroot "$ROOTFS" systemctl enable lightdm
 
 echo -e "${YELLOW}[*] Cleaning up package cache inside rootfs...${RESET}"
 chroot "$ROOTFS" apt-get clean
