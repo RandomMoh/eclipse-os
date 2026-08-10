@@ -105,7 +105,7 @@ class EclipseDock(Gtk.Window):
     def __init__(self):
         super().__init__(type=Gtk.WindowType.TOPLEVEL)
         self.set_name("eclipse-dock-window")
-        self.set_type_hint(Gdk.WindowTypeHint.DOCK)
+        self.set_type_hint(Gdk.WindowTypeHint.UTILITY)
         self.set_keep_above(True)
         self.set_decorated(False)
         self.set_resizable(False)
@@ -130,8 +130,11 @@ class EclipseDock(Gtk.Window):
         main_box.pack_start(self.container, False, False, 0)
         self.add(main_box)
 
-        self.connect("realize", self.on_realize)
+        self.connect("size-allocate", self.on_size_allocate)
         self.connect("destroy", Gtk.main_quit)
+
+        self.show_all()
+        GLib.idle_add(self.reposition)
 
     def apply_css(self):
         provider = Gtk.CssProvider()
@@ -142,16 +145,24 @@ class EclipseDock(Gtk.Window):
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
         )
 
-    def on_realize(self, widget):
+    def on_size_allocate(self, widget, allocation):
+        self.reposition()
+
+    def reposition(self):
         screen = self.get_screen()
-        monitor_geom = screen.get_monitor_geometry(screen.get_primary_monitor() or 0)
-        
-        self.show_all()
-        req_w, req_h = self.get_size()
-        
-        x = monitor_geom.x + (monitor_geom.width - req_w) // 2
-        y = monitor_geom.y + monitor_geom.height - req_h - 12
+        display = screen.get_display()
+        monitor = display.get_primary_monitor() or display.get_monitor(0)
+        geom = monitor.get_geometry()
+
+        alloc = self.get_allocation()
+        w = alloc.width if alloc.width > 50 else 420
+        h = alloc.height if alloc.height > 20 else 64
+
+        x = geom.x + (geom.width - w) // 2
+        y = geom.y + geom.height - h - 16
         self.move(x, y)
+        self.set_keep_above(True)
+        return False
 
 def main():
     dock = EclipseDock()
