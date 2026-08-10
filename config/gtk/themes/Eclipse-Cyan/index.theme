@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=X-GNOME-Metatheme
+Name=Eclipse-Cyan
+Comment=Eclipse OS Cyan GTK3 Theme
+Encoding=UTF-8
+GtkTheme=Eclipse-Cyan
+IconTheme=Papirus-Dark
+MetacityTheme=Eclipse-Cyan
+X-GNOME-Metatheme-Name=Eclipse-Cyan
+
+[X-GNOME-Metatheme]
+GtkTheme=Eclipse-Cyan
+MetacityTheme=Eclipse-Cyan
+IconTheme=Papirus-Dark
+ButtonLayout=close,minimize,maximize:

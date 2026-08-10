@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=X-GNOME-Metatheme
+Name=Eclipse-Crimson
+Comment=Eclipse OS Crimson GTK3 Theme
+Encoding=UTF-8
+GtkTheme=Eclipse-Crimson
+IconTheme=Papirus-Dark
+MetacityTheme=Eclipse-Crimson
+X-GNOME-Metatheme-Name=Eclipse-Crimson
+
+[X-GNOME-Metatheme]
+GtkTheme=Eclipse-Crimson
+MetacityTheme=Eclipse-Crimson
+IconTheme=Papirus-Dark
+ButtonLayout=close,minimize,maximize:

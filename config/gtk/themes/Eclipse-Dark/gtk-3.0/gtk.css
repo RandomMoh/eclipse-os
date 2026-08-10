@@ -1,0 +1,135 @@
+/* Eclipse-Dark GTK3 Theme */
+@define-color bg_color #0F0D0E;
+@define-color surface_color #16141D;
+@define-color primary_accent #8B5CF6;
+@define-color secondary_accent #A78BFA;
+@define-color text_color #F8FAFC;
+@define-color text_muted #94A3B8;
+@define-color border_color #282136;
+
+* {
+    background-clip: padding-box;
+    -GtkToolItem-shadow-type: none;
+    -GtkTextView-error-underline-color: #EF4444;
+    -GtkScrolledWindow-scrollbar-spacing: 0;
+    -GtkWidget-focus-line-width: 1;
+    -GtkWidget-focus-padding: 1;
+}
+
+window, body, dialog {
+    background-color: #0F0D0E;
+    color: #F8FAFC;
+}
+
+.background {
+    background-color: #0F0D0E;
+    color: #F8FAFC;
+}
+
+headerbar, toolbar {
+    background-color: #16141D;
+    color: #F8FAFC;
+    border-bottom: 1px solid #282136;
+    padding: 6px 12px;
+}
+
+headerbar .title {
+    font-weight: bold;
+    color: #F8FAFC;
+}
+
+headerbar .subtitle {
+    font-size: smaller;
+    color: #94A3B8;
+}
+
+button {
+    background-color: #16141D;
+    color: #F8FAFC;
+    border: 1px solid #282136;
+    border-radius: 6px;
+    padding: 6px 12px;
+    transition: all 150ms ease-in-out;
+}
+
+button:hover {
+    background-color: #282136;
+    border-color: #8B5CF6;
+}
+
+button:active, button:checked {
+    background-color: #8B5CF6;
+    color: #FFFFFF;
+}
+
+button.suggested-action {
+    background-color: #8B5CF6;
+    color: #FFFFFF;
+    border-color: #8B5CF6;
+}
+
+button.suggested-action:hover {
+    background-color: #A78BFA;
+}
+
+entry, spinbutton {
+    background-color: #16141D;
+    color: #F8FAFC;
+    border: 1px solid #282136;
+    border-radius: 6px;
+    padding: 6px 8px;
+}
+
+entry:focus, spinbutton:focus {
+    border-color: #8B5CF6;
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3);
+}
+
+scrollbar {
+    background-color: transparent;
+}
+
+scrollbar slider {
+    background-color: #282136;
+    border-radius: 4px;
+    min-width: 8px;
+    min-height: 8px;
+}
+
+scrollbar slider:hover {
+    background-color: #8B5CF6;
+}
+
+menu, menuitem, popover {
+    background-color: #16141D;
+    color: #F8FAFC;
+    border: 1px solid #282136;
+    border-radius: 6px;
+}
+
+menuitem:hover {
+    background-color: #8B5CF6;
+    color: #FFFFFF;
+}
+
+notebook tab {
+    background-color: #0F0D0E;
+    color: #94A3B8;
+    padding: 8px 16px;
+    border-bottom: 2px solid transparent;
+}
+
+notebook tab:checked {
+    color: #A78BFA;
+    border-bottom-color: #A78BFA;
+}
+
+progressbar progress {
+    background-color: #8B5CF6;
+    border-radius: 4px;
+}
+
+progressbar trough {
+    background-color: #16141D;
+    border-radius: 4px;
+}

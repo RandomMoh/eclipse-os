@@ -2,9 +2,9 @@
 
 <channel name="xfwm4" version="1.0">
   <property name="general" type="empty">
-    <property name="theme" type="string" value="Eclipse-Dark"/>
+    <property name="theme" type="string" value="Eclipse-Crimson"/>
     <property name="title_alignment" type="string" value="center"/>
-    <property name="active_text_color" type="string" value="#8B5CF6"/>
+    <property name="active_text_color" type="string" value="#E11D48"/>
     <property name="inactive_text_color" type="string" value="#94A3B8"/>
     <property name="button_layout" type="string" value="O|HMC"/>
     <property name="title_font" type="string" value="Sans Bold 10"/>

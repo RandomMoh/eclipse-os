@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=X-GNOME-Metatheme
+Name=Eclipse-Emerald
+Comment=Eclipse OS Emerald GTK3 Theme
+Encoding=UTF-8
+GtkTheme=Eclipse-Emerald
+IconTheme=Papirus-Dark
+MetacityTheme=Eclipse-Emerald
+X-GNOME-Metatheme-Name=Eclipse-Emerald
+
+[X-GNOME-Metatheme]
+GtkTheme=Eclipse-Emerald
+MetacityTheme=Eclipse-Emerald
+IconTheme=Papirus-Dark
+ButtonLayout=close,minimize,maximize:
