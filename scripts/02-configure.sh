@@ -218,10 +218,9 @@ mkdir -p "$ROOTFS/usr/share/backgrounds/eclipse"
 cp "$PROJECT_ROOT/config/wallpaper/eclipse-wallpaper.png" "$ROOTFS/usr/share/backgrounds/eclipse/eclipse-wallpaper.png"
 
 # System-wide desktop-base wallpaper overrides
-mkdir -p "$ROOTFS/usr/share/images/desktop-base" "$ROOTFS/usr/share/desktop-base/active-theme/wallpaper/contents/images"
-ln -sf /usr/share/backgrounds/eclipse/eclipse-wallpaper.png "$ROOTFS/usr/share/images/desktop-base/desktop-background"
-ln -sf /usr/share/backgrounds/eclipse/eclipse-wallpaper.png "$ROOTFS/usr/share/images/desktop-base/default"
-ln -sf /usr/share/backgrounds/eclipse/eclipse-wallpaper.png "$ROOTFS/usr/share/desktop-base/active-theme/wallpaper/contents/images/1920x1080.svg"
+mkdir -p "$ROOTFS/usr/share/images/desktop-base"
+ln -sf /usr/share/backgrounds/eclipse/eclipse-wallpaper.png "$ROOTFS/usr/share/images/desktop-base/desktop-background" 2>/dev/null || true
+ln -sf /usr/share/backgrounds/eclipse/eclipse-wallpaper.png "$ROOTFS/usr/share/images/desktop-base/default" 2>/dev/null || true
 
 # System-wide XFCE Panel & XFConf templates (overrides live-config default template)
 mkdir -p "$ROOTFS/etc/xdg/xfce4/panel" "$ROOTFS/etc/xdg/xfce4/xfconf/xfce-perchannel-xml"
