@@ -135,3 +135,15 @@ progressbar trough {
     background-color: #27272A;
     border-radius: 4px;
 }
+
+/* Rubberband Drag Selection Box */
+.rubberband, rubberband, flowbox rubberband, treeview.view rubberband, .view.rubberband, XfdesktopIconView.rubberband {
+    background-color: rgba(16, 185, 129, 0.25);
+    border: 1px solid #10B981;
+    border-radius: 4px;
+}
+
+selection, label:selected, entry selection, textview selection {
+    background-color: #10B981;
+    color: #FFFFFF;
+}

@@ -241,7 +241,7 @@ cat <<'EOF' > "$ROOTFS/usr/share/applications/eclipse-sysinfo.desktop"
 Version=1.0
 Name=Eclipse SysInfo
 Comment=Display system metrics and Eclipse OS specs
-Exec=xfce4-terminal -e eclipse-sysinfo
+Exec=xfce4-terminal --hold -e eclipse-sysinfo
 Icon=utilities-system-monitor
 Terminal=false
 Type=Application
