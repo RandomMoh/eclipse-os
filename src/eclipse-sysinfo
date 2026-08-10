@@ -150,7 +150,6 @@ def main():
 
     console.print(table)
 
-    # Use rich.progress.Progress to demonstrate system scan / metrics bar
     with Progress(
         TextColumn("[bold #62A0EA]{task.description}[/bold #62A0EA]"),
         BarColumn(bar_width=40, complete_style="#3584E4", finished_style="#62A0EA"),
