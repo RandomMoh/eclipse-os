@@ -2,7 +2,7 @@
 
 <channel name="xsettings" version="1.0">
   <property name="Net" type="empty">
-    <property name="ThemeName" type="string" value="Eclipse-Crimson"/>
+    <property name="ThemeName" type="string" value="Eclipse-Fedora"/>
     <property name="IconThemeName" type="string" value="Papirus-Dark"/>
     <property name="DoubleClicks" type="empty">
       <property name="Time" type="int" value="400"/>

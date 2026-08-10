@@ -1,10 +1,10 @@
-# Eclipse OS GRUB Theme - Crimson Edition v1.0
+# Eclipse OS GRUB Theme - Fedora Edition v1.0
 
-desktop-color: "#0F0D0E"
+desktop-color: "#1E1E1E"
 desktop-image: "logo.png"
 title-text: "Eclipse OS v1.0"
 title-font: "Sans Regular 24"
-title-color: "#E11D48"
+title-color: "#3584E4"
 title-left: 0%
 title-top: 22%
 title-width: 100%
@@ -24,8 +24,8 @@ title-align: "center"
     width = 50%
     height = 40%
     item_font = "Sans Regular 16"
-    item_color = "#F8FAFC"
-    selected_item_color = "#E11D48"
+    item_color = "#FFFFFF"
+    selected_item_color = "#3584E4"
     item_height = 40
     item_padding = 10
     item_spacing = 8
@@ -38,9 +38,9 @@ title-align: "center"
     top = 80%
     width = 50%
     height = 12
-    highlight_color = "#E11D48"
-    bg_color = "#1A1114"
-    border_color = "#2E1B22"
+    highlight_color = "#3584E4"
+    bg_color = "#1E1E1E"
+    border_color = "#1C71D8"
 }
 
 + label {
@@ -49,6 +49,6 @@ title-align: "center"
     width = 100%
     align = "center"
     text = "Use Up/Down keys to move, Enter to select"
-    color = "#94A3B8"
+    color = "#9A9A9A"
     font = "Sans Regular 12"
 }

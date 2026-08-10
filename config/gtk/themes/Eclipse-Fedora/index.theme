@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=X-GNOME-Metatheme
+Name=Eclipse-Fedora
+Comment=Eclipse OS Fedora Edition GTK3 Theme
+Encoding=UTF-8
+GtkTheme=Eclipse-Fedora
+IconTheme=Papirus-Dark
+MetacityTheme=Eclipse-Fedora
+X-GNOME-Metatheme-Name=Eclipse-Fedora
+
+[X-GNOME-Metatheme]
+GtkTheme=Eclipse-Fedora
+MetacityTheme=Eclipse-Fedora
+IconTheme=Papirus-Dark
+ButtonLayout=close,minimize,maximize:
