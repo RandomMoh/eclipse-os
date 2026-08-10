@@ -225,7 +225,7 @@ cp -r "$PROJECT_ROOT/config/xfce/xfce-perchannel-xml" "$ROOTFS/etc/skel/.config/
 mkdir -p "$ROOTFS/etc/skel/.config/gtk-3.0"
 cat <<'EOF' > "$ROOTFS/etc/skel/.config/gtk-3.0/settings.ini"
 [Settings]
-gtk-theme-name=Eclipse-Crimson
+gtk-theme-name=Eclipse-Fedora
 gtk-icon-theme-name=Papirus-Dark
 EOF
 
@@ -276,7 +276,7 @@ if [[ -d "$ROOTFS/home/eclipse" ]]; then
     cp -r "$PROJECT_ROOT/config/xfce/xfce-perchannel-xml" "$ROOTFS/home/eclipse/.config/xfce4/xfconf/"
     cat <<'EOF' > "$ROOTFS/home/eclipse/.config/gtk-3.0/settings.ini"
 [Settings]
-gtk-theme-name=Eclipse-Crimson
+gtk-theme-name=Eclipse-Fedora
 gtk-icon-theme-name=Papirus-Dark
 EOF
     cp -r "$ROOTFS/etc/skel/Desktop/"* "$ROOTFS/home/eclipse/Desktop/" 2>/dev/null || true
