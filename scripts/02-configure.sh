@@ -96,6 +96,7 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
     desktop-base \
     xfce4 \
     xfce4-goodies \
+    papirus-icon-theme \
     lightdm \
     sudo \
     python3 \
@@ -203,17 +204,30 @@ EOF
 chmod +x "$ROOTFS/etc/profile.d/composer.sh"
 
 echo -e "${BLUE}[+] Provisioning desktop assets and configuration...${RESET}"
-# GTK Theme
-mkdir -p "$ROOTFS/usr/share/themes/Eclipse-Dark"
-cp -r "$PROJECT_ROOT/config/gtk/"* "$ROOTFS/usr/share/themes/Eclipse-Dark/"
+# GTK Themes
+mkdir -p "$ROOTFS/usr/share/themes"
+cp -r "$PROJECT_ROOT/config/gtk/themes/"* "$ROOTFS/usr/share/themes/"
 
-# XFCE Config for default skeleton
-mkdir -p "$ROOTFS/etc/skel/.config"
-cp -r "$PROJECT_ROOT/config/xfce/"* "$ROOTFS/etc/skel/.config/"
+# Logos
+mkdir -p "$ROOTFS/usr/share/pixmaps"
+cp "$PROJECT_ROOT/config/logo/eclipse-logo.png" "$ROOTFS/usr/share/pixmaps/eclipse-logo.png"
+cp "$PROJECT_ROOT/config/logo/eclipse-logo.png" "$ROOTFS/usr/share/pixmaps/eclipse.png"
 
 # Wallpaper
 mkdir -p "$ROOTFS/usr/share/backgrounds/eclipse"
-cp "$PROJECT_ROOT/config/wallpaper/eclipse-wallpaper.png" "$ROOTFS/usr/share/backgrounds/eclipse/"
+cp "$PROJECT_ROOT/config/wallpaper/eclipse-wallpaper.png" "$ROOTFS/usr/share/backgrounds/eclipse/eclipse-wallpaper.png"
+
+# XFCE Config and default GTK/icon settings for skeleton
+mkdir -p "$ROOTFS/etc/skel/.config/xfce4/xfconf"
+cp -r "$PROJECT_ROOT/config/xfce/"* "$ROOTFS/etc/skel/.config/"
+cp -r "$PROJECT_ROOT/config/xfce/xfce-perchannel-xml" "$ROOTFS/etc/skel/.config/xfce4/xfconf/"
+
+mkdir -p "$ROOTFS/etc/skel/.config/gtk-3.0"
+cat <<'EOF' > "$ROOTFS/etc/skel/.config/gtk-3.0/settings.ini"
+[Settings]
+gtk-theme-name=Eclipse-Crimson
+gtk-icon-theme-name=Papirus-Dark
+EOF
 
 echo -e "${BLUE}[+] Provisioning native Python utilities...${RESET}"
 mkdir -p "$ROOTFS/usr/local/bin"
@@ -257,8 +271,14 @@ done
 
 # Copy XFCE desktop configuration and Desktop shortcuts to live user home directory if created
 if [[ -d "$ROOTFS/home/eclipse" ]]; then
-    mkdir -p "$ROOTFS/home/eclipse/.config" "$ROOTFS/home/eclipse/Desktop"
+    mkdir -p "$ROOTFS/home/eclipse/.config/xfce4/xfconf" "$ROOTFS/home/eclipse/.config/gtk-3.0" "$ROOTFS/home/eclipse/Desktop"
     cp -r "$PROJECT_ROOT/config/xfce/"* "$ROOTFS/home/eclipse/.config/"
+    cp -r "$PROJECT_ROOT/config/xfce/xfce-perchannel-xml" "$ROOTFS/home/eclipse/.config/xfce4/xfconf/"
+    cat <<'EOF' > "$ROOTFS/home/eclipse/.config/gtk-3.0/settings.ini"
+[Settings]
+gtk-theme-name=Eclipse-Crimson
+gtk-icon-theme-name=Papirus-Dark
+EOF
     cp -r "$ROOTFS/etc/skel/Desktop/"* "$ROOTFS/home/eclipse/Desktop/" 2>/dev/null || true
     chmod +x "$ROOTFS/home/eclipse/Desktop/"*.desktop 2>/dev/null || true
     chroot "$ROOTFS" chown -R eclipse:eclipse /home/eclipse
