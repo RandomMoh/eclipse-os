@@ -28,7 +28,10 @@ fi
 # Cleanup function to unmount virtual filesystems
 cleanup() {
     echo -e "${YELLOW}[*] Unmounting virtual filesystems...${RESET}"
-    umount -l "$ROOTFS/dev/pts" "$ROOTFS/dev" "$ROOTFS/proc" "$ROOTFS/sys" 2>/dev/null || true
+    umount "$ROOTFS/dev/pts" 2>/dev/null || true
+    umount "$ROOTFS/dev" 2>/dev/null || true
+    umount "$ROOTFS/proc" 2>/dev/null || true
+    umount "$ROOTFS/sys" 2>/dev/null || true
 }
 
 trap cleanup EXIT INT TERM
@@ -37,8 +40,8 @@ echo -e "${BLUE}[+] Mounting virtual filesystems into rootfs...${RESET}"
 mkdir -p "$ROOTFS/proc" "$ROOTFS/sys" "$ROOTFS/dev" "$ROOTFS/dev/pts"
 mount --bind /proc "$ROOTFS/proc"
 mount --bind /sys "$ROOTFS/sys"
-mount --bind /dev "$ROOTFS/dev"
-mount --bind /dev/pts "$ROOTFS/dev/pts"
+mount -t devtmpfs devtmpfs "$ROOTFS/dev" 2>/dev/null || mount --bind /dev "$ROOTFS/dev"
+mount -t devpts devpts "$ROOTFS/dev/pts" 2>/dev/null || mount --bind /dev/pts "$ROOTFS/dev/pts"
 
 echo -e "${BLUE}[+] Writing hostname, hosts, and APT sources.list...${RESET}"
 echo "eclipse-os" > "$ROOTFS/etc/hostname"
@@ -81,6 +84,13 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
     xserver-xorg \
     xserver-xorg-video-all \
     xserver-xorg-input-all \
+    firmware-linux \
+    firmware-iwlwifi \
+    firmware-realtek \
+    firmware-atheros \
+    bluez \
+    bluez-tools \
+    bluetooth \
     dbus-x11 \
     x11-xserver-utils \
     desktop-base \
