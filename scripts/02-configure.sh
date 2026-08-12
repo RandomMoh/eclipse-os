@@ -403,6 +403,9 @@ User=eclipse
 Session=plasma
 EOF
 
+# Force systemd to use sddm instead of lightdm
+chroot "$ROOTFS" bash -c "rm -f /etc/systemd/system/display-manager.service && systemctl enable sddm"
+
 # Set systemd graphical target and enable SDDM service
 echo -e "${BLUE}[+] Enabling SDDM display manager and graphical default target...${RESET}"
 chroot "$ROOTFS" systemctl set-default graphical.target
