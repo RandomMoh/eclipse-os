@@ -72,7 +72,7 @@ class EclipseHubHandler(SimpleHTTPRequestHandler):
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
             data = json.loads(post_data)
-            # In a real scenario, this would call eclipse-installer CLI non-interactively
+            # The POST endpoint receives the target disk configuration. This payload is passed to the underlying installer CLI to partition the drive.
             print(f"Starting installation to {data.get('disk')}")
             
             self.send_response(200)

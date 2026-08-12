@@ -30,4 +30,3 @@ else
 fi
 
 echo -e "${BLUE}[+] Launching Eclipse OS inside QEMU...${RESET}"
-#qemu-system-x86_64 $KVM_ARG -m 4096 -smp 4 -vga virtio -display gtk -cdrom "$ISO_PATH" -boot d

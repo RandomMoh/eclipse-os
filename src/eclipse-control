@@ -279,7 +279,7 @@ def cmd_theme(args):
         except Exception:
             pass
 
-    # 2. Update ~/.config/kdeglobals for KDE Plasma AccentColor
+    # KDE Plasma manages accent colors through kdeglobals. The color must be formatted as an RGB triplet rather than a hex code.
     kdeglobals_path = os.path.expanduser("~/.config/kdeglobals")
     if os.path.exists(kdeglobals_path):
         try:
@@ -342,7 +342,7 @@ def cmd_theme(args):
         except Exception:
             pass
 
-    # Dynamically update running XFCE session if xfconf-query is present
+    # If xfconf-query is installed, we can push theme changes to the running XFCE daemon without requiring a session restart.
     if shutil.which("xfconf-query"):
         subprocess.run(["xfconf-query", "-c", "xsettings", "-p", "/Net/ThemeName", "-s", theme_folder], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
 

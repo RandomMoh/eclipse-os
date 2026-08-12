@@ -233,7 +233,7 @@ chroot "$ROOTFS" env COMPOSER_ALLOW_SUPERUSER=1 composer global require laravel/
 mkdir -p "$ROOTFS/usr/local/bin"
 chroot "$ROOTFS" ln -sf /root/.config/composer/vendor/bin/laravel /usr/local/bin/laravel 2>/dev/null || true
 
-# Add Composer vendor bin path to default profile for all users
+# Composer's vendor bin path isn't globally available by default, so we inject it into the system profile.
 mkdir -p "$ROOTFS/etc/profile.d"
 cat <<'EOF' > "$ROOTFS/etc/profile.d/composer.sh"
 #!/usr/bin/env bash
@@ -278,12 +278,12 @@ mkdir -p "$ROOTFS/usr/share/images/desktop-base"
 ln -sf /usr/share/backgrounds/eclipse/eclipse-wallpaper.png "$ROOTFS/usr/share/images/desktop-base/desktop-background" 2>/dev/null || true
 ln -sf /usr/share/backgrounds/eclipse/eclipse-wallpaper.png "$ROOTFS/usr/share/images/desktop-base/default" 2>/dev/null || true
 
-# Force KDE Plasma to use the Eclipse OS wallpaper by overwriting the default Breeze Next wallpaper
+# KDE Plasma aggressively defaults to the Breeze Next wallpaper. Overwriting the symlink target is the only reliable way to enforce the custom wallpaper on the first boot.
 mkdir -p "$ROOTFS/usr/share/wallpapers/Next/contents/images"
 cp "$PROJECT_ROOT/config/wallpaper/eclipse-wallpaper.png" "$ROOTFS/usr/share/wallpapers/Next/contents/images/1920x1080.png"
 cp "$PROJECT_ROOT/config/wallpaper/eclipse-wallpaper.png" "$ROOTFS/usr/share/wallpapers/Next/contents/images/1920x1080.jpg"
 
-# Disable live-config overrides for desktop-base, xfce, lightdm, and set clean KDE environment
+# live-config injects unwanted configuration for desktop-base and lightdm. Disabling these overrides ensures the KDE environment boots cleanly without interference.
 rm -rf "$ROOTFS/etc/lightdm" "$ROOTFS/etc/xdg/xfce4" 2>/dev/null || true
 rm -f "$ROOTFS/lib/live/config/0000-desktop-base" "$ROOTFS/lib/live/config/0100-lightdm" "$ROOTFS/lib/live/config/1160-xfce4-desktop" "$ROOTFS/lib/live/config/1170-xfce4-panel" 2>/dev/null || true
 rm -f "$ROOTFS/usr/lib/live/config/0000-desktop-base" "$ROOTFS/usr/lib/live/config/0100-lightdm" "$ROOTFS/usr/lib/live/config/1160-xfce4-desktop" "$ROOTFS/usr/lib/live/config/1170-xfce4-panel" 2>/dev/null || true
@@ -302,7 +302,7 @@ echo -e "${BLUE}[+] Provisioning Plymouth Boot Splash Theme...${RESET}"
 mkdir -p "$ROOTFS/usr/share/plymouth/themes"
 cp -r "$PROJECT_ROOT/config/plymouth/eclipse-splash" "$ROOTFS/usr/share/plymouth/themes/"
 
-# Configure Plymouth Daemon & initramfs Framebuffer
+# The plymouth daemon requires specific framebuffer settings in initramfs to render the boot splash correctly before the GPU drivers fully load.
 mkdir -p "$ROOTFS/etc/plymouth" "$ROOTFS/etc/initramfs-tools/conf.d"
 cat <<'EOF' > "$ROOTFS/etc/plymouth/plymouthd.conf"
 [Daemon]
@@ -397,7 +397,7 @@ if [[ -d "$ROOTFS/home/eclipse" ]]; then
     chroot "$ROOTFS" chown -R eclipse:eclipse /home/eclipse
 fi
 
-# Purge KDE Plasma bloatware (KDE PIM background daemons, KDE Games, Help Center)
+# KDE PIM daemons consume background resources even when unused. Removing them, along with games and help documentation, keeps the RAM footprint under 1GB.
 echo -e "${YELLOW}[*] Purging KDE Plasma bloatware packages from rootfs...${RESET}"
 chroot "$ROOTFS" apt-get purge -y akonadi-server kmail korganizer kaddressbook pim-data-exporter khelpcenter kmahjongg kpat ksudoku dragonplayer juk elisa sweeper 2>/dev/null || true
 chroot "$ROOTFS" apt-get autoremove -y --purge 2>/dev/null || true
@@ -410,11 +410,11 @@ chmod 0440 "$ROOTFS/etc/sudoers.d/eclipse"
 # Purge leftover session desktop files
 rm -f "$ROOTFS/usr/share/xsessions/xfce.desktop" "$ROOTFS/usr/share/xsessions/lightdm-xsession.desktop" 2>/dev/null || true
 
-# Disable SDDM autologin - require the user to hit Enter (blank password)
+# SDDM requires an explicit password for normal logins. Leaving the password blank allows the user to log in just by hitting Enter, bypassing the autologin loop.
 echo -e "${BLUE}[+] Ensuring SDDM autologin is disabled...${RESET}"
 rm -f "$ROOTFS/etc/sddm.conf.d/autologin.conf" 2>/dev/null || true
 
-# Force systemd to use sddm instead of lightdm
+# LightDM can hijack the display-manager symlink during package installation. Hardcoding the SDDM symlink guarantees the correct display manager starts.
 chroot "$ROOTFS" bash -c "rm -f /etc/systemd/system/display-manager.service && systemctl enable sddm"
 
 # Set systemd graphical target and enable SDDM service

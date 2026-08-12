@@ -37,10 +37,10 @@ mkdir -p "$ISO_STAGING/boot/grub/themes"
 mkdir -p "$ISO_STAGING/EFI/BOOT"
 mkdir -p "$OUTPUT_DIR"
 
-# Ensure virtual filesystems inside rootfs are unmounted before compression
+# Compressing the rootfs with mounted virtual filesystems (like /proc and /dev) will cause mksquashfs to package dynamic kernel structures and hang the build. They must be unmounted first.
 umount -l "$ROOTFS/dev/pts" "$ROOTFS/dev" "$ROOTFS/proc" "$ROOTFS/sys" 2>/dev/null || true
 
-# Recreate empty required system mountpoint directories for init and live-boot
+# live-boot expects /proc, /sys, /dev, and /run to exist as empty directories in the squashfs so it can mount them during the boot sequence.
 rm -rf "$ROOTFS/proc/"* "$ROOTFS/sys/"* "$ROOTFS/dev/"* "$ROOTFS/run/"* "$ROOTFS/tmp/"* 2>/dev/null || true
 mkdir -p "$ROOTFS/proc" "$ROOTFS/sys" "$ROOTFS/dev" "$ROOTFS/run" "$ROOTFS/tmp"
 chmod 1777 "$ROOTFS/tmp"
