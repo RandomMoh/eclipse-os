@@ -365,6 +365,11 @@ for launcher in zen-browser.desktop kate.desktop code.desktop eclipse-sysinfo.de
     fi
 done
 
+# Create live user manually to ensure password is set properly before SDDM starts
+echo -e "${BLUE}[+] Creating eclipse user...${RESET}"
+chroot "$ROOTFS" bash -c 'if ! id -u eclipse >/dev/null 2>&1; then useradd -m -c "Eclipse OS Live User" -G sudo,video,audio,plugdev,netdev -s /bin/bash eclipse; fi'
+chroot "$ROOTFS" bash -c 'echo "eclipse:eclipse" | chpasswd'
+
 # Copy KDE desktop configuration and Desktop shortcuts to live user home directory
 if [[ -d "$ROOTFS/home/eclipse" ]]; then
     mkdir -p "$ROOTFS/home/eclipse/.config" "$ROOTFS/home/eclipse/Desktop"
