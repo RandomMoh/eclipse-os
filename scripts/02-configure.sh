@@ -360,13 +360,16 @@ mkdir -p "$ROOTFS/etc/sudoers.d"
 echo "eclipse ALL=(ALL) NOPASSWD: ALL" > "$ROOTFS/etc/sudoers.d/eclipse"
 chmod 0440 "$ROOTFS/etc/sudoers.d/eclipse"
 
+# Purge leftover session desktop files
+rm -f "$ROOTFS/usr/share/xsessions/xfce.desktop" "$ROOTFS/usr/share/xsessions/lightdm-xsession.desktop" 2>/dev/null || true
+
 # Configure SDDM autologin for KDE Plasma
 echo -e "${BLUE}[+] Configuring SDDM autologin for KDE Plasma...${RESET}"
 mkdir -p "$ROOTFS/etc/sddm.conf.d"
 cat <<'EOF' > "$ROOTFS/etc/sddm.conf.d/autologin.conf"
 [Autologin]
 User=eclipse
-Session=plasma.desktop
+Session=plasma
 EOF
 
 # Set systemd graphical target and enable SDDM service
