@@ -99,11 +99,13 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
     initramfs-tools \
     kde-plasma-desktop \
     plasma-workspace \
+    plasma-workspace-wayland \
     plasma-desktop \
     konsole \
     dolphin \
     kate \
     kwin-x11 \
+    kwin-wayland \
     sddm \
     breeze \
     breeze-gtk-theme \
@@ -276,6 +278,11 @@ mkdir -p "$ROOTFS/usr/share/images/desktop-base"
 ln -sf /usr/share/backgrounds/eclipse/eclipse-wallpaper.png "$ROOTFS/usr/share/images/desktop-base/desktop-background" 2>/dev/null || true
 ln -sf /usr/share/backgrounds/eclipse/eclipse-wallpaper.png "$ROOTFS/usr/share/images/desktop-base/default" 2>/dev/null || true
 
+# Force KDE Plasma to use the Eclipse OS wallpaper by overwriting the default Breeze Next wallpaper
+mkdir -p "$ROOTFS/usr/share/wallpapers/Next/contents/images"
+cp "$PROJECT_ROOT/config/wallpaper/eclipse-wallpaper.png" "$ROOTFS/usr/share/wallpapers/Next/contents/images/1920x1080.png"
+cp "$PROJECT_ROOT/config/wallpaper/eclipse-wallpaper.png" "$ROOTFS/usr/share/wallpapers/Next/contents/images/1920x1080.jpg"
+
 # Disable live-config overrides for desktop-base, xfce, lightdm, and set clean KDE environment
 rm -rf "$ROOTFS/etc/lightdm" "$ROOTFS/etc/xdg/xfce4" 2>/dev/null || true
 rm -f "$ROOTFS/lib/live/config/0000-desktop-base" "$ROOTFS/lib/live/config/0100-lightdm" "$ROOTFS/lib/live/config/1160-xfce4-desktop" "$ROOTFS/lib/live/config/1170-xfce4-panel" 2>/dev/null || true
@@ -365,10 +372,10 @@ for launcher in zen-browser.desktop kate.desktop code.desktop eclipse-sysinfo.de
     fi
 done
 
-# Create live user manually to ensure password is set properly before SDDM starts
+# Create live user without a hardcoded password so user can login with empty password
 echo -e "${BLUE}[+] Creating eclipse user...${RESET}"
 chroot "$ROOTFS" bash -c 'if ! id -u eclipse >/dev/null 2>&1; then useradd -m -c "Eclipse OS Live User" -G sudo,video,audio,plugdev,netdev -s /bin/bash eclipse; fi'
-chroot "$ROOTFS" bash -c 'echo "eclipse:eclipse" | chpasswd'
+chroot "$ROOTFS" bash -c 'passwd -d eclipse'
 
 # Copy KDE desktop configuration and Desktop shortcuts to live user home directory
 if [[ -d "$ROOTFS/home/eclipse" ]]; then
@@ -394,14 +401,9 @@ chmod 0440 "$ROOTFS/etc/sudoers.d/eclipse"
 # Purge leftover session desktop files
 rm -f "$ROOTFS/usr/share/xsessions/xfce.desktop" "$ROOTFS/usr/share/xsessions/lightdm-xsession.desktop" 2>/dev/null || true
 
-# Configure SDDM autologin for KDE Plasma
-echo -e "${BLUE}[+] Configuring SDDM autologin for KDE Plasma...${RESET}"
-mkdir -p "$ROOTFS/etc/sddm.conf.d"
-cat <<'EOF' > "$ROOTFS/etc/sddm.conf.d/autologin.conf"
-[Autologin]
-User=eclipse
-Session=plasma
-EOF
+# Disable SDDM autologin - require the user to hit Enter (blank password)
+echo -e "${BLUE}[+] Ensuring SDDM autologin is disabled...${RESET}"
+rm -f "$ROOTFS/etc/sddm.conf.d/autologin.conf" 2>/dev/null || true
 
 # Force systemd to use sddm instead of lightdm
 chroot "$ROOTFS" bash -c "rm -f /etc/systemd/system/display-manager.service && systemctl enable sddm"
