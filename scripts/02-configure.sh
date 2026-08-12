@@ -254,25 +254,19 @@ mkdir -p "$ROOTFS/usr/share/images/desktop-base"
 ln -sf /usr/share/backgrounds/eclipse/eclipse-wallpaper.png "$ROOTFS/usr/share/images/desktop-base/desktop-background" 2>/dev/null || true
 ln -sf /usr/share/backgrounds/eclipse/eclipse-wallpaper.png "$ROOTFS/usr/share/images/desktop-base/default" 2>/dev/null || true
 
-# System-wide XFCE Panel & XFConf templates (overrides live-config default template)
-mkdir -p "$ROOTFS/etc/xdg/xfce4/panel" "$ROOTFS/etc/xdg/xfce4/xfconf/xfce-perchannel-xml"
-cp "$PROJECT_ROOT/config/xfce/xfce-perchannel-xml/xfce4-panel.xml" "$ROOTFS/etc/xdg/xfce4/panel/default.xml"
-cp "$PROJECT_ROOT/config/xfce/xfce-perchannel-xml/"* "$ROOTFS/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/"
+# Disable live-config overrides for desktop-base, xfce, lightdm, and set clean KDE environment
+rm -rf "$ROOTFS/etc/lightdm" "$ROOTFS/etc/xdg/xfce4" 2>/dev/null || true
+rm -f "$ROOTFS/lib/live/config/0000-desktop-base" "$ROOTFS/lib/live/config/0100-lightdm" "$ROOTFS/lib/live/config/1160-xfce4-desktop" "$ROOTFS/lib/live/config/1170-xfce4-panel" 2>/dev/null || true
+rm -f "$ROOTFS/usr/lib/live/config/0000-desktop-base" "$ROOTFS/usr/lib/live/config/0100-lightdm" "$ROOTFS/usr/lib/live/config/1160-xfce4-desktop" "$ROOTFS/usr/lib/live/config/1170-xfce4-panel" 2>/dev/null || true
 
-# Disable live-config overrides for desktop-base and xfce panel
-rm -f "$ROOTFS/lib/live/config/0000-desktop-base" "$ROOTFS/lib/live/config/1160-xfce4-desktop" "$ROOTFS/lib/live/config/1170-xfce4-panel" 2>/dev/null || true
-rm -f "$ROOTFS/usr/lib/live/config/0000-desktop-base" "$ROOTFS/usr/lib/live/config/1160-xfce4-desktop" "$ROOTFS/usr/lib/live/config/1170-xfce4-panel" 2>/dev/null || true
-
-# XFCE Config and default GTK/icon settings for skeleton
-mkdir -p "$ROOTFS/etc/skel/.config/xfce4/xfconf"
-cp -r "$PROJECT_ROOT/config/xfce/"* "$ROOTFS/etc/skel/.config/"
-cp -r "$PROJECT_ROOT/config/xfce/xfce-perchannel-xml" "$ROOTFS/etc/skel/.config/xfce4/xfconf/"
-
-mkdir -p "$ROOTFS/etc/skel/.config/gtk-3.0"
-cat <<'EOF' > "$ROOTFS/etc/skel/.config/gtk-3.0/settings.ini"
-[Settings]
-gtk-theme-name=Eclipse-Fedora
-gtk-icon-theme-name=Papirus-Dark
+# Set Dolphin as default file manager & Zen Browser as default web browser in skel
+mkdir -p "$ROOTFS/etc/skel/.config"
+cat <<'EOF' > "$ROOTFS/etc/skel/.config/mimeapps.list"
+[Default Applications]
+inode/directory=org.kde.dolphin.desktop
+text/html=zen-browser.desktop
+x-scheme-handler/http=zen-browser.desktop
+x-scheme-handler/https=zen-browser.desktop
 EOF
 
 echo -e "${BLUE}[+] Provisioning Plymouth Boot Splash Theme...${RESET}"
