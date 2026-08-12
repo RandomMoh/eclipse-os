@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Install Eclipse OS & Drivers
+Comment=Install OS or proprietary drivers
+Exec=/usr/local/bin/eclipse-os-hub
+Icon=system-software-install
+Terminal=false
+Categories=System;Settings;

@@ -161,11 +161,7 @@ def main():
         progress.update(task, completed=100)
 
     if sys.stdin.isatty():
-        try:
-            console.print("\n[bold #62A0EA]Press Enter to close...[/bold #62A0EA]", end="")
-            input()
-        except (KeyboardInterrupt, EOFError):
-            pass
+        pass
 
 if __name__ == "__main__":
     main()

@@ -325,6 +325,15 @@ cp "$PROJECT_ROOT/src/eclipse-control" "$ROOTFS/usr/local/bin/"
 cp "$PROJECT_ROOT/src/eclipse-installer" "$ROOTFS/usr/local/bin/"
 cp "$PROJECT_ROOT/src/eclipse-dock" "$ROOTFS/usr/local/bin/"
 cp "$PROJECT_ROOT/src/dnf" "$ROOTFS/usr/local/bin/"
+
+cp "$PROJECT_ROOT/src/eclipse-os-hub.py" "$ROOTFS/usr/local/bin/eclipse-os-hub"
+chmod +x "$ROOTFS/usr/local/bin/eclipse-os-hub"
+cp -r "$PROJECT_ROOT/src/ui" "$ROOTFS/usr/local/bin/"
+cp -r "$PROJECT_ROOT/src/assets" "$ROOTFS/usr/local/bin/"
+
+mkdir -p "$ROOTFS/usr/share/applications/"
+cp "$PROJECT_ROOT/config/desktop/eclipse-os-hub.desktop" "$ROOTFS/usr/share/applications/"
+cp "$PROJECT_ROOT/config/desktop/eclipse-os-hub.desktop" "$ROOTFS/etc/skel/Desktop/"
 chmod +x "$ROOTFS/usr/local/bin/eclipse-sysinfo" "$ROOTFS/usr/local/bin/eclipse-control" "$ROOTFS/usr/local/bin/eclipse-installer" "$ROOTFS/usr/local/bin/eclipse-dock" "$ROOTFS/usr/local/bin/dnf"
 
 mkdir -p "$ROOTFS/etc/xdg/autostart" "$ROOTFS/etc/skel/.config/autostart"
