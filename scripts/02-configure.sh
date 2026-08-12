@@ -239,10 +239,28 @@ echo -e "${BLUE}[+] Provisioning desktop assets and configuration...${RESET}"
 mkdir -p "$ROOTFS/usr/share/themes"
 cp -r "$PROJECT_ROOT/config/gtk/themes/"* "$ROOTFS/usr/share/themes/"
 
-# Logos
-mkdir -p "$ROOTFS/usr/share/pixmaps"
+# Logos and Icon System Provisioning
+mkdir -p "$ROOTFS/usr/share/pixmaps" \
+         "$ROOTFS/usr/share/icons/hicolor/256x256/apps" \
+         "$ROOTFS/usr/share/icons/hicolor/scalable/apps" \
+         "$ROOTFS/usr/share/icons/Papirus-Dark/48x48/places"
 cp "$PROJECT_ROOT/config/logo/eclipse-logo.png" "$ROOTFS/usr/share/pixmaps/eclipse-logo.png"
 cp "$PROJECT_ROOT/config/logo/eclipse-logo.png" "$ROOTFS/usr/share/pixmaps/eclipse.png"
+cp "$PROJECT_ROOT/config/logo/eclipse-logo.png" "$ROOTFS/usr/share/pixmaps/kicker-logo.png"
+cp "$PROJECT_ROOT/config/logo/eclipse-logo.png" "$ROOTFS/usr/share/icons/hicolor/256x256/apps/eclipse-logo.png"
+cp "$PROJECT_ROOT/config/logo/eclipse-logo.png" "$ROOTFS/usr/share/icons/hicolor/256x256/apps/start-here.png"
+
+# Write OS Branding to /etc/os-release
+cat <<'EOF' > "$ROOTFS/etc/os-release"
+NAME="Eclipse OS"
+VERSION="1.0 (Syzygy)"
+ID=eclipse
+ID_LIKE=debian
+PRETTY_NAME="Eclipse OS 1.0 (Syzygy)"
+VERSION_ID="1.0"
+HOME_URL="https://github.com/RandomMoh/eclipse-os"
+LOGO="eclipse-logo"
+EOF
 
 # Wallpaper
 mkdir -p "$ROOTFS/usr/share/backgrounds/eclipse"
