@@ -141,10 +141,22 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
     bat \
     strace \
     lsof \
-    net-tools \
+    apache2 \
+    php \
+    php-cli \
+    php-mbstring \
+    php-xml \
+    php-curl \
+    php-mysql \
+    php-zip \
+    mariadb-server \
+    composer \
     nodejs \
     npm \
     neovim \
+    vlc \
+    tmux \
+    zsh \
     htop \
     neofetch \
     curl \
@@ -340,9 +352,9 @@ if [[ -d "$ROOTFS/home/eclipse" ]]; then
     chroot "$ROOTFS" chown -R eclipse:eclipse /home/eclipse
 fi
 
-# Purge bloatware web/database servers and unneeded tools
-echo -e "${YELLOW}[*] Purging bloatware packages from rootfs...${RESET}"
-chroot "$ROOTFS" apt-get purge -y apache2 mariadb-server php\* composer vlc tmux zsh 2>/dev/null || true
+# Purge KDE Plasma bloatware (KDE PIM background daemons, KDE Games, Help Center)
+echo -e "${YELLOW}[*] Purging KDE Plasma bloatware packages from rootfs...${RESET}"
+chroot "$ROOTFS" apt-get purge -y akonadi-server kmail korganizer kaddressbook pim-data-exporter khelpcenter kmahjongg kpat ksudoku dragonplayer juk elisa sweeper 2>/dev/null || true
 chroot "$ROOTFS" apt-get autoremove -y --purge 2>/dev/null || true
 
 # Write sudoers file for eclipse user
