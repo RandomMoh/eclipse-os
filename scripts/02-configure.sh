@@ -97,11 +97,18 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
     plymouth \
     plymouth-themes \
     initramfs-tools \
-    xfce4 \
-    xfce4-goodies \
+    kde-plasma-desktop \
+    plasma-workspace \
+    plasma-desktop \
+    konsole \
+    dolphin \
+    kate \
+    kwin-x11 \
+    sddm \
+    breeze \
+    breeze-gtk-theme \
+    plasma-widgets-addons \
     papirus-icon-theme \
-    lightdm \
-    xfce4-terminal \
     sudo \
     python3 \
     python3-pip \
@@ -300,10 +307,12 @@ chmod +x "$ROOTFS/usr/local/bin/eclipse-sysinfo" "$ROOTFS/usr/local/bin/eclipse-
 mkdir -p "$ROOTFS/etc/xdg/autostart" "$ROOTFS/etc/skel/.config/autostart"
 cp "$PROJECT_ROOT/config/autostart/eclipse-dock.desktop" "$ROOTFS/etc/xdg/autostart/"
 cp "$PROJECT_ROOT/config/autostart/eclipse-dock.desktop" "$ROOTFS/etc/skel/.config/autostart/"
-# Provision KDE Plasma default settings for skeleton
+# Provision KDE Plasma default settings for skeleton and eclipse user
 mkdir -p "$ROOTFS/etc/skel/.config"
 cp -f "$PROJECT_ROOT/config/kde/kdeglobals" "$ROOTFS/etc/skel/.config/kdeglobals"
 cp -f "$PROJECT_ROOT/config/kde/plasmarc" "$ROOTFS/etc/skel/.config/plasmarc"
+cp -f "$PROJECT_ROOT/config/kde/plasma-org.kde.plasma.desktop-appletsrc" "$ROOTFS/etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc"
+cp -f "$PROJECT_ROOT/config/kde/kwinrc" "$ROOTFS/etc/skel/.config/kwinrc"
 
 # Create desktop launchers for Eclipse Utilities
 mkdir -p "$ROOTFS/usr/share/applications"
@@ -312,7 +321,7 @@ cat <<'EOF' > "$ROOTFS/usr/share/applications/eclipse-sysinfo.desktop"
 Version=1.0
 Name=Eclipse SysInfo
 Comment=Display system metrics and Eclipse OS specs
-Exec=xfce4-terminal --hold -e eclipse-sysinfo
+Exec=konsole --hold -e eclipse-sysinfo
 Icon=utilities-system-monitor
 Terminal=false
 Type=Application
@@ -324,7 +333,7 @@ cat <<'EOF' > "$ROOTFS/usr/share/applications/eclipse-installer.desktop"
 Version=1.0
 Name=Eclipse OS Installer
 Comment=Install Eclipse OS to target disk
-Exec=xfce4-terminal -e "sudo eclipse-installer"
+Exec=konsole -e "sudo eclipse-installer"
 Icon=system-software-install
 Terminal=false
 Type=Application
@@ -340,16 +349,13 @@ for launcher in zen-browser.desktop kate.desktop code.desktop eclipse-sysinfo.de
     fi
 done
 
-# Copy XFCE desktop configuration and Desktop shortcuts to live user home directory if created
+# Copy KDE desktop configuration and Desktop shortcuts to live user home directory
 if [[ -d "$ROOTFS/home/eclipse" ]]; then
-    mkdir -p "$ROOTFS/home/eclipse/.config/xfce4/xfconf" "$ROOTFS/home/eclipse/.config/gtk-3.0" "$ROOTFS/home/eclipse/Desktop"
-    cp -r "$PROJECT_ROOT/config/xfce/"* "$ROOTFS/home/eclipse/.config/"
-    cp -r "$PROJECT_ROOT/config/xfce/xfce-perchannel-xml" "$ROOTFS/home/eclipse/.config/xfce4/xfconf/"
-    cat <<'EOF' > "$ROOTFS/home/eclipse/.config/gtk-3.0/settings.ini"
-[Settings]
-gtk-theme-name=Eclipse-Fedora
-gtk-icon-theme-name=Papirus-Dark
-EOF
+    mkdir -p "$ROOTFS/home/eclipse/.config" "$ROOTFS/home/eclipse/Desktop"
+    cp -f "$PROJECT_ROOT/config/kde/kdeglobals" "$ROOTFS/home/eclipse/.config/kdeglobals"
+    cp -f "$PROJECT_ROOT/config/kde/plasmarc" "$ROOTFS/home/eclipse/.config/plasmarc"
+    cp -f "$PROJECT_ROOT/config/kde/plasma-org.kde.plasma.desktop-appletsrc" "$ROOTFS/home/eclipse/.config/plasma-org.kde.plasma.desktop-appletsrc"
+    cp -f "$PROJECT_ROOT/config/kde/kwinrc" "$ROOTFS/home/eclipse/.config/kwinrc"
     cp -r "$ROOTFS/etc/skel/Desktop/"* "$ROOTFS/home/eclipse/Desktop/" 2>/dev/null || true
     chmod +x "$ROOTFS/home/eclipse/Desktop/"*.desktop 2>/dev/null || true
     chroot "$ROOTFS" chown -R eclipse:eclipse /home/eclipse
@@ -360,24 +366,19 @@ mkdir -p "$ROOTFS/etc/sudoers.d"
 echo "eclipse ALL=(ALL) NOPASSWD: ALL" > "$ROOTFS/etc/sudoers.d/eclipse"
 chmod 0440 "$ROOTFS/etc/sudoers.d/eclipse"
 
-# Configure LightDM autologin
-echo -e "${BLUE}[+] Configuring LightDM autologin...${RESET}"
-mkdir -p "$ROOTFS/etc/lightdm/lightdm.conf.d"
-cat <<'EOF' > "$ROOTFS/etc/lightdm/lightdm.conf.d/80-autologin.conf"
-[Seat:*]
-autologin-user=eclipse
-autologin-user-timeout=0
+# Configure SDDM autologin for KDE Plasma
+echo -e "${BLUE}[+] Configuring SDDM autologin for KDE Plasma...${RESET}"
+mkdir -p "$ROOTFS/etc/sddm.conf.d"
+cat <<'EOF' > "$ROOTFS/etc/sddm.conf.d/autologin.conf"
+[Autologin]
+User=eclipse
+Session=plasma.desktop
 EOF
 
-if [[ -f "$ROOTFS/etc/lightdm/lightdm.conf" ]]; then
-    sed -i 's/^#\?autologin-user=.*/autologin-user=eclipse/' "$ROOTFS/etc/lightdm/lightdm.conf"
-    sed -i 's/^#\?autologin-user-timeout=.*/autologin-user-timeout=0/' "$ROOTFS/etc/lightdm/lightdm.conf"
-fi
-
-# Set systemd graphical target and enable LightDM service
-echo -e "${BLUE}[+] Enabling LightDM and setting graphical default target...${RESET}"
+# Set systemd graphical target and enable SDDM service
+echo -e "${BLUE}[+] Enabling SDDM display manager and graphical default target...${RESET}"
 chroot "$ROOTFS" systemctl set-default graphical.target
-chroot "$ROOTFS" systemctl enable lightdm
+chroot "$ROOTFS" systemctl enable sddm 2>/dev/null || true
 
 echo -e "${YELLOW}[*] Cleaning up package cache inside rootfs...${RESET}"
 chroot "$ROOTFS" apt-get clean
