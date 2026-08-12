@@ -129,15 +129,7 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
     grub-efi-amd64-bin \
     grub-pc-bin \
     kate \
-    build-essential \
-    gcc \
-    g++ \
     make \
-    cmake \
-    gdb \
-    valgrind \
-    clang \
-    llvm \
     golang \
     cargo \
     rustc \
@@ -148,8 +140,12 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
     fzf \
     jq \
     bat \
-    strace \
     lsof \
+    kscreen \
+    systemsettings \
+    kde-config-screenlocker \
+    kde-config-sddm \
+    plasma-nm \
     apache2 \
     php \
     php-cli \
