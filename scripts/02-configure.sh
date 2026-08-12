@@ -142,22 +142,9 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
     strace \
     lsof \
     net-tools \
-    apache2 \
-    php \
-    php-cli \
-    php-mbstring \
-    php-xml \
-    php-curl \
-    php-mysql \
-    php-zip \
-    mariadb-server \
-    composer \
     nodejs \
     npm \
     neovim \
-    vlc \
-    tmux \
-    zsh \
     htop \
     neofetch \
     curl \
@@ -305,7 +292,6 @@ cp "$PROJECT_ROOT/config/autostart/eclipse-dock.desktop" "$ROOTFS/etc/skel/.conf
 mkdir -p "$ROOTFS/etc/skel/.config"
 cp -f "$PROJECT_ROOT/config/kde/kdeglobals" "$ROOTFS/etc/skel/.config/kdeglobals"
 cp -f "$PROJECT_ROOT/config/kde/plasmarc" "$ROOTFS/etc/skel/.config/plasmarc"
-cp -f "$PROJECT_ROOT/config/kde/plasma-org.kde.plasma.desktop-appletsrc" "$ROOTFS/etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc"
 cp -f "$PROJECT_ROOT/config/kde/kwinrc" "$ROOTFS/etc/skel/.config/kwinrc"
 
 # Create desktop launchers for Eclipse Utilities
@@ -348,12 +334,16 @@ if [[ -d "$ROOTFS/home/eclipse" ]]; then
     mkdir -p "$ROOTFS/home/eclipse/.config" "$ROOTFS/home/eclipse/Desktop"
     cp -f "$PROJECT_ROOT/config/kde/kdeglobals" "$ROOTFS/home/eclipse/.config/kdeglobals"
     cp -f "$PROJECT_ROOT/config/kde/plasmarc" "$ROOTFS/home/eclipse/.config/plasmarc"
-    cp -f "$PROJECT_ROOT/config/kde/plasma-org.kde.plasma.desktop-appletsrc" "$ROOTFS/home/eclipse/.config/plasma-org.kde.plasma.desktop-appletsrc"
     cp -f "$PROJECT_ROOT/config/kde/kwinrc" "$ROOTFS/home/eclipse/.config/kwinrc"
     cp -r "$ROOTFS/etc/skel/Desktop/"* "$ROOTFS/home/eclipse/Desktop/" 2>/dev/null || true
     chmod +x "$ROOTFS/home/eclipse/Desktop/"*.desktop 2>/dev/null || true
     chroot "$ROOTFS" chown -R eclipse:eclipse /home/eclipse
 fi
+
+# Purge bloatware web/database servers and unneeded tools
+echo -e "${YELLOW}[*] Purging bloatware packages from rootfs...${RESET}"
+chroot "$ROOTFS" apt-get purge -y apache2 mariadb-server php\* composer vlc tmux zsh 2>/dev/null || true
+chroot "$ROOTFS" apt-get autoremove -y --purge 2>/dev/null || true
 
 # Write sudoers file for eclipse user
 mkdir -p "$ROOTFS/etc/sudoers.d"

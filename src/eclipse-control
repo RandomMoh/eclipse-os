@@ -203,15 +203,12 @@ def cmd_status(args):
     stack_table.add_column("Check / Binary Path", style="white", width=32)
     stack_table.add_column("Status / Version", style="white")
 
-    stack_table.add_row("Apache2 Web Server", "apache2ctl / systemctl", check_service_status("apache2"))
-    stack_table.add_row("MariaDB Database", "mariadb / systemctl", check_service_status("mariadb"))
-    stack_table.add_row("PHP Runtime", "php -v", get_php_status())
+    stack_table.add_row("KDE Plasma Desktop", "plasma-workspace / kwin", "[bold green]● Active[/bold green]")
+    stack_table.add_row("Podman Containers", "podman --version", check_service_status("podman"))
     stack_table.add_row("Node.js & npm", "node -v / npm -v", get_node_npm_status())
-    stack_table.add_row("Laravel CLI", "laravel --version", get_laravel_status())
     stack_table.add_row("Flutter SDK", "flutter --version", get_flutter_status())
-    stack_table.add_row("Flame Engine", "Flutter 2D Game Engine", get_flame_status())
     stack_table.add_row("Zen Browser", "/usr/local/bin/zen-browser", get_zen_status())
-    stack_table.add_row("Papirus Icon Theme", "Papirus-Dark", get_icon_theme())
+    stack_table.add_row("DNF CLI Wrapper", "/usr/local/bin/dnf", "[bold green]● Active[/bold green]")
 
     # Overall Health Panel
     health_text = (
