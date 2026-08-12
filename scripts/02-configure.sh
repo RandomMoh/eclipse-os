@@ -108,6 +108,15 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
     breeze \
     breeze-gtk-theme \
     plasma-widgets-addons \
+    qml-module-qt-labs-platform \
+    qml-module-org-kde-plasma-workspace-components \
+    qml-module-org-kde-kquickcontrols \
+    qml-module-org-kde-kquickcontrolsaddons \
+    qml-module-org-kde-kirigami2 \
+    qml-module-qtquick-controls \
+    qml-module-qtquick-controls2 \
+    qml-module-qtquick-layouts \
+    kio-extras \
     papirus-icon-theme \
     sudo \
     python3 \

@@ -13,6 +13,7 @@ ForegroundNormal=248,250,252
 [General]
 ColorScheme=BreezeDark
 accentColor=225,29,72
+BrowserApplication=zen-browser
 
 [KDE]
 SingleClick=false
