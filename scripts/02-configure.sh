@@ -112,6 +112,7 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
     qml-module-org-kde-kquickcontrols \
     qml-module-org-kde-kquickcontrolsaddons \
     qml-module-org-kde-kirigami2 \
+    qml-module-org-kde-kitemmodels \
     qml-module-qtquick-controls \
     qml-module-qtquick-controls2 \
     qml-module-qtquick-layouts \
@@ -327,8 +328,9 @@ mkdir -p "$ROOTFS/etc/xdg/autostart" "$ROOTFS/etc/skel/.config/autostart"
 cp "$PROJECT_ROOT/config/autostart/eclipse-dock.desktop" "$ROOTFS/etc/xdg/autostart/"
 cp "$PROJECT_ROOT/config/autostart/eclipse-dock.desktop" "$ROOTFS/etc/skel/.config/autostart/"
 # Provision KDE Plasma default settings for skeleton and eclipse user
-mkdir -p "$ROOTFS/etc/skel/.config"
+mkdir -p "$ROOTFS/etc/skel/.config" "$ROOTFS/etc/xdg"
 cp -f "$PROJECT_ROOT/config/kde/kdeglobals" "$ROOTFS/etc/skel/.config/kdeglobals"
+cp -f "$PROJECT_ROOT/config/kde/kdeglobals" "$ROOTFS/etc/xdg/kdeglobals"
 cp -f "$PROJECT_ROOT/config/kde/plasmarc" "$ROOTFS/etc/skel/.config/plasmarc"
 cp -f "$PROJECT_ROOT/config/kde/kwinrc" "$ROOTFS/etc/skel/.config/kwinrc"
 

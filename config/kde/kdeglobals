@@ -15,6 +15,9 @@ ColorScheme=BreezeDark
 accentColor=225,29,72
 BrowserApplication=zen-browser
 
+[Icons]
+Theme=Papirus-Dark
+
 [KDE]
 SingleClick=false
 WidgetStyle=Breeze
