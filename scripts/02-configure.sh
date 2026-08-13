@@ -452,8 +452,9 @@ mkdir -p "$ROOTFS/etc/sudoers.d"
 echo "eclipse ALL=(ALL) NOPASSWD: ALL" > "$ROOTFS/etc/sudoers.d/eclipse"
 chmod 0440 "$ROOTFS/etc/sudoers.d/eclipse"
 
-# Purge leftover session desktop files
+# Purge leftover session desktop files and remove unstable Wayland session from live image
 rm -f "$ROOTFS/usr/share/xsessions/xfce.desktop" "$ROOTFS/usr/share/xsessions/lightdm-xsession.desktop" 2>/dev/null || true
+rm -rf "$ROOTFS/usr/share/wayland-sessions" 2>/dev/null || true
 
 # Configure SDDM explicitly to launch Plasma X11 and set default session
 echo -e "${BLUE}[+] Configuring SDDM and default X11 session manager...${RESET}"
