@@ -322,6 +322,20 @@ cat <<'EOF' > "$ROOTFS/etc/initramfs-tools/conf.d/live.conf"
 BOOT=live
 EOF
 
+echo -e "${BLUE}[+] Synchronizing modern AMDGPU firmware binaries into rootfs...${RESET}"
+mkdir -p "$ROOTFS/lib/firmware/amdgpu"
+for f in /lib/firmware/amdgpu/*.zst; do
+    if [ -f "$f" ]; then
+        base="$(basename "$f" .zst)"
+        zstd -d -c "$f" > "$ROOTFS/lib/firmware/amdgpu/$base" 2>/dev/null || true
+    fi
+done
+for f in /lib/firmware/amdgpu/*; do
+    if [ -f "$f" ] && [[ "$f" != *.zst ]]; then
+        cp "$f" "$ROOTFS/lib/firmware/amdgpu/" 2>/dev/null || true
+    fi
+done
+
 chroot "$ROOTFS" plymouth-set-default-theme eclipse-splash -R 2>/dev/null || true
 chroot "$ROOTFS" update-initramfs -u -k all 2>/dev/null || true
 
