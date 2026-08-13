@@ -4,125 +4,183 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Eclipse OS Hub</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="/assets/tailwind.js"></script>
+    <script src="/assets/gsap.min.js"></script>
     <script src="/assets/lucide.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
                     colors: {
-                        background: '#0B0D14',
-                        surface: '#121520',
-                        border: '#1A1D2D',
-                        primary: '#8B5CF6',
-                        secondary: '#06B6D4',
-                        text: '#E2E8F0',
-                        muted: '#94A3B8'
+                        deep: '#050505',
+                        core: '#090A0C',
+                        shell: '#111317',
+                        hairline: 'rgba(255, 255, 255, 0.05)',
+                        muted: 'rgba(255, 255, 255, 0.4)',
+                        accent: '#EAEAEA'
                     }
                 }
             }
         }
     </script>
     <style>
-        body { background-color: #0B0D14; color: #E2E8F0; margin: 0; padding: 0; }
-        .nav-item.active {
-            border-left: 2px solid #8B5CF6;
-            background: rgba(139, 92, 246, 0.1);
-            color: #E2E8F0;
+        body { 
+            background-color: #050505; 
+            color: #EAEAEA; 
+            margin: 0; 
+            padding: 0; 
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Noise Texture */
+        .texture {
+            position: fixed; inset: 0; z-index: 50; pointer-events: none;
+            background-image: url('data:image/svg+xml,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="n"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23n)"/%3E%3C/svg%3E');
+            opacity: 0.03;
+        }
+
+        /* Doppel-Bezel Architecture */
+        .doppel-shell {
+            background-color: #0C0D11;
+            border: 1px solid rgba(255,255,255,0.06);
+            padding: 0.375rem;
+            border-radius: 2rem;
+        }
+        .doppel-core {
+            background-color: #050505;
+            box-shadow: inset 0 1px 1px rgba(255,255,255,0.03);
+            border-radius: calc(2rem - 0.375rem);
+            padding: 2.5rem;
+            height: 100%;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+        /* Typography overrides */
+        h1, h2, h3 { letter-spacing: -0.02em; }
+        
+        .radio-custom:checked + div {
+            border-color: rgba(255,255,255,0.2);
+            background-color: rgba(255,255,255,0.02);
         }
     </style>
 </head>
-<body class="antialiased flex h-screen overflow-hidden">
+<body class="selection:bg-white/10 selection:text-white">
+    <div class="texture"></div>
 
-    <!-- Sidebar -->
-    <aside class="w-64 bg-surface border-r border-border flex flex-col">
-        <div class="h-16 flex items-center px-6 border-b border-border">
-            <span class="font-semibold tracking-wide text-sm">ECLIPSE OS</span>
-        </div>
-        <nav class="flex-1 py-4 flex flex-col gap-1">
-            <button onclick="switchTab('installer')" id="nav-installer" class="nav-item active flex items-center gap-3 px-6 py-3 text-sm font-medium text-muted hover:text-text transition-colors text-left">
-                <i data-lucide="hard-drive" class="w-4 h-4"></i>
-                Disk Installer
-            </button>
-            <button onclick="switchTab('drivers')" id="nav-drivers" class="nav-item flex items-center gap-3 px-6 py-3 text-sm font-medium text-muted hover:text-text transition-colors text-left">
-                <i data-lucide="cpu" class="w-4 h-4"></i>
-                Hardware Drivers
-            </button>
-        </nav>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="flex-1 flex flex-col h-full bg-background overflow-y-auto">
+    <main class="min-h-[100dvh] py-16 px-6 sm:px-12 max-w-6xl mx-auto flex flex-col">
         
-        <!-- Installer Tab -->
-        <div id="tab-installer" class="p-10 max-w-5xl mx-auto w-full h-full flex flex-col">
-            <div class="mb-8 border-b border-border pb-6">
-                <h1 class="text-2xl font-semibold mb-2">System Installation</h1>
-                <p class="text-muted text-sm">Provision Eclipse OS to a physical storage device. This action will destroy existing data.</p>
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-16 stagger-elem">
+            <div class="flex flex-col gap-1">
+                <span class="text-[10px] uppercase tracking-[0.2em] font-bold text-white/30">Eclipse OS</span>
+                <h1 class="text-3xl font-semibold text-white">System Hub</h1>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-1">
-                <!-- Disk Selection -->
-                <div class="lg:col-span-2 flex flex-col gap-6">
-                    <div>
-                        <h2 class="text-sm font-medium text-primary mb-4 uppercase tracking-wider">Target Device</h2>
-                        <div id="disk-list" class="flex flex-col gap-3">
-                            <div class="animate-pulse bg-surface h-16 rounded-md border border-border"></div>
-                        </div>
+            <!-- Island Nav -->
+            <nav class="flex p-1 bg-white/5 border border-white/10 rounded-full backdrop-blur-md">
+                <button onclick="switchTab('installer')" id="nav-installer" class="px-6 py-2 rounded-full text-sm font-medium bg-white/10 text-white transition-all">Installer</button>
+                <button onclick="switchTab('drivers')" id="nav-drivers" class="px-6 py-2 rounded-full text-sm font-medium text-white/40 hover:text-white transition-all">Drivers</button>
+            </nav>
+        </header>
+
+        <!-- Installer View -->
+        <div id="tab-installer" class="grid grid-cols-1 lg:grid-cols-12 gap-6 tab-view">
+            
+            <!-- Left: Disk Selection -->
+            <div class="col-span-1 lg:col-span-8 doppel-shell stagger-elem">
+                <div class="doppel-core flex flex-col">
+                    <h2 class="text-lg font-medium text-white mb-1">Target Storage</h2>
+                    <p class="text-sm text-white/40 mb-8">Select the physical block device to format. This action is destructive.</p>
+                    
+                    <div id="disk-list" class="flex flex-col gap-3 flex-1">
+                        <!-- Disks load here -->
+                        <div class="h-20 bg-white/5 animate-pulse rounded-2xl"></div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Config -->
-                <div class="flex flex-col gap-6">
-                    <h2 class="text-sm font-medium text-primary mb-1 uppercase tracking-wider">Configuration</h2>
-                    
-                    <div>
-                        <label class="block text-xs font-medium text-muted mb-2">Hostname</label>
-                        <input type="text" value="eclipse-os" class="w-full bg-surface border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-primary transition-colors" />
+            <!-- Right: Config -->
+            <div class="col-span-1 lg:col-span-4 doppel-shell stagger-elem">
+                <div class="doppel-core flex flex-col justify-between">
+                    <div class="flex flex-col gap-6">
+                        <h2 class="text-lg font-medium text-white mb-2">Configuration</h2>
+                        
+                        <div class="space-y-1">
+                            <label class="text-[10px] uppercase tracking-[0.1em] text-white/40 font-medium">Hostname</label>
+                            <input type="text" value="eclipse-os" class="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-white/20 focus:bg-white/10 transition-colors" />
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] uppercase tracking-[0.1em] text-white/40 font-medium">Admin User</label>
+                            <input type="text" value="eclipse" class="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-white/20 focus:bg-white/10 transition-colors" />
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] uppercase tracking-[0.1em] text-white/40 font-medium">Password</label>
+                            <input type="password" placeholder="••••••••" class="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-white/20 focus:bg-white/10 transition-colors" />
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-xs font-medium text-muted mb-2">Admin Username</label>
-                        <input type="text" value="eclipse" class="w-full bg-surface border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-primary transition-colors" />
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-muted mb-2">Password</label>
-                        <input type="password" placeholder="••••••••" class="w-full bg-surface border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-primary transition-colors" />
-                    </div>
-                    <div class="mt-4 pt-6 border-t border-border">
-                        <button class="w-full bg-primary hover:bg-opacity-90 text-white font-medium py-2.5 rounded-md text-sm transition-colors">
-                            Format & Install
+
+                    <!-- CTA Button -->
+                    <div class="mt-12">
+                        <button class="group relative w-full inline-flex items-center justify-between p-2 pl-6 bg-white rounded-full hover:bg-gray-200 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98]">
+                            <span class="text-black font-semibold text-sm">Install System</span>
+                            <div class="w-10 h-10 rounded-full bg-black/5 flex items-center justify-center transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:-rotate-45 group-hover:scale-105">
+                                <i data-lucide="arrow-right" class="w-4 h-4 text-black"></i>
+                            </div>
                         </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Drivers Tab -->
-        <div id="tab-drivers" class="hidden p-10 max-w-5xl mx-auto w-full h-full flex flex-col">
-            <div class="mb-8 border-b border-border pb-6">
-                <h1 class="text-2xl font-semibold mb-2">Hardware Drivers</h1>
-                <p class="text-muted text-sm">Manage proprietary graphics drivers and hardware acceleration modules.</p>
-            </div>
-            
-            <div id="driver-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Loaded dynamically -->
+        <!-- Drivers View -->
+        <div id="tab-drivers" class="hidden tab-view grid-cols-1 gap-6">
+            <div class="doppel-shell stagger-elem">
+                <div class="doppel-core min-h-[500px]">
+                    <h2 class="text-lg font-medium text-white mb-1">Hardware Drivers</h2>
+                    <p class="text-sm text-white/40 mb-8">Manage proprietary graphics drivers and hardware acceleration modules.</p>
+                    
+                    <div id="driver-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Load here -->
+                    </div>
+                </div>
             </div>
         </div>
+
     </main>
 
     <script>
         lucide.createIcons();
 
+        // Initial entry animation
+        gsap.fromTo('.stagger-elem', 
+            { y: 30, opacity: 0 }, 
+            { y: 0, opacity: 1, duration: 1, stagger: 0.1, ease: 'power4.out', delay: 0.2 }
+        );
+
         function switchTab(tabId) {
-            document.getElementById('tab-installer').classList.add('hidden');
-            document.getElementById('tab-drivers').classList.add('hidden');
+            document.querySelectorAll('.tab-view').forEach(el => {
+                el.classList.add('hidden');
+                el.classList.remove('grid');
+            });
             document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            if (tabId === 'installer') document.getElementById(`tab-installer`).classList.add('grid');
+            if (tabId === 'drivers') document.getElementById(`tab-drivers`).classList.add('grid');
             
-            document.getElementById('nav-installer').classList.remove('active');
-            document.getElementById('nav-drivers').classList.remove('active');
-            document.getElementById(`nav-${tabId}`).classList.add('active');
+            document.getElementById('nav-installer').className = "px-6 py-2 rounded-full text-sm font-medium transition-all " + (tabId === 'installer' ? "bg-white/10 text-white" : "text-white/40 hover:text-white");
+            document.getElementById('nav-drivers').className = "px-6 py-2 rounded-full text-sm font-medium transition-all " + (tabId === 'drivers' ? "bg-white/10 text-white" : "text-white/40 hover:text-white");
+
+            // Re-trigger animation
+            gsap.fromTo(`#tab-${tabId} .stagger-elem`, 
+                { y: 20, opacity: 0 }, 
+                { y: 0, opacity: 1, duration: 0.8, stagger: 0.05, ease: 'power3.out' }
+            );
 
             if(tabId === 'drivers') loadDrivers();
         }
@@ -136,18 +194,24 @@
                 
                 disks.forEach((disk, idx) => {
                     list.innerHTML += `
-                        <label class="cursor-pointer flex items-center justify-between p-4 bg-surface border border-border rounded-md hover:border-primary transition-colors">
-                            <div class="flex items-center gap-4">
-                                <input type="radio" name="disk" value="${disk.node}" ${idx===0 ? 'checked' : ''} class="w-4 h-4 text-primary bg-background border-border">
-                                <div>
-                                    <div class="font-medium text-sm">${disk.node}</div>
-                                    <div class="text-xs text-muted mt-1">${disk.model}</div>
+                        <label class="cursor-pointer relative">
+                            <input type="radio" name="disk" value="${disk.node}" ${idx===0 ? 'checked' : ''} class="peer sr-only radio-custom">
+                            <div class="flex items-center justify-between p-5 rounded-2xl border border-white/5 bg-transparent hover:bg-white/[0.02] transition-colors peer-checked:border-white/20 peer-checked:bg-white/[0.03]">
+                                <div class="flex items-center gap-5">
+                                    <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+                                        <i data-lucide="hard-drive" class="w-4 h-4 text-white/60"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-semibold text-white/90 text-sm tracking-wide">${disk.node}</div>
+                                        <div class="text-xs text-white/40 mt-0.5">${disk.model}</div>
+                                    </div>
                                 </div>
+                                <div class="text-sm font-medium text-white/30 tracking-widest">${disk.size}</div>
                             </div>
-                            <div class="text-sm font-mono text-muted">${disk.size}</div>
                         </label>
                     `;
                 });
+                lucide.createIcons();
             } catch(e) {
                 console.error(e);
             }
@@ -162,20 +226,19 @@
 
                 drivers.forEach(drv => {
                     const isActive = drv.status === 'Active';
-                    const bgClass = isActive ? 'bg-surface border-primary' : 'bg-surface border-border';
-                    const btnClass = isActive ? 'bg-background text-muted cursor-not-allowed border border-border' : 'bg-primary text-white hover:bg-opacity-90';
-                    const btnText = isActive ? 'Active' : 'Apply';
+                    const btnClass = isActive ? 'bg-white/5 text-white/30 cursor-not-allowed' : 'bg-white text-black hover:bg-gray-200';
+                    const btnText = isActive ? 'Installed' : 'Install';
 
                     list.innerHTML += `
-                        <div class="p-5 rounded-md border ${bgClass} flex flex-col justify-between gap-4">
+                        <div class="p-6 rounded-2xl border border-white/5 bg-white/[0.01] flex flex-col justify-between gap-8 transition-colors hover:border-white/10">
                             <div>
-                                <div class="flex items-center justify-between mb-3">
-                                    <h3 class="font-medium text-sm">${drv.name}</h3>
-                                    <span class="text-xs font-mono text-muted">${drv.type}</span>
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="font-medium text-white text-sm tracking-wide">${drv.name}</h3>
+                                    <span class="text-[9px] uppercase tracking-[0.2em] font-bold px-2 py-1 rounded-full bg-white/5 text-white/40">${drv.type}</span>
                                 </div>
-                                <p class="text-xs text-muted leading-relaxed">${drv.description}</p>
+                                <p class="text-xs text-white/40 leading-relaxed">${drv.description}</p>
                             </div>
-                            <button ${isActive ? 'disabled' : ''} class="w-full py-2 rounded text-xs font-medium transition-colors ${btnClass}">
+                            <button ${isActive ? 'disabled' : ''} class="w-max px-6 py-2 rounded-full text-xs font-semibold transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 ${btnClass}">
                                 ${btnText}
                             </button>
                         </div>
