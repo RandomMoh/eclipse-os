@@ -12,10 +12,11 @@ DOCK_LAUNCHERS = [
     {"name": "Zen Browser", "cmd": "zen-browser", "icon": "zen-browser", "fallback_icon": "web-browser"},
     {"name": "Kate", "cmd": "kate", "icon": "kate", "fallback_icon": "accessories-text-editor"},
     {"name": "VS Code", "cmd": "code", "icon": "vscode", "fallback_icon": "com.visualstudio.code"},
-    {"name": "Files", "cmd": "thunar", "icon": "system-file-manager", "fallback_icon": "folder"},
-    {"name": "Terminal", "cmd": "xfce4-terminal", "icon": "utilities-terminal", "fallback_icon": "terminal"},
-    {"name": "SysInfo", "cmd": "xfce4-terminal --hold -e eclipse-sysinfo", "icon": "utilities-system-monitor", "fallback_icon": "system-search"},
-    {"name": "Installer", "cmd": "xfce4-terminal -e 'sudo eclipse-installer'", "icon": "system-software-install", "fallback_icon": "system-run"},
+    {"name": "Files", "cmd": "dolphin", "icon": "system-file-manager", "fallback_icon": "folder"},
+    {"name": "Terminal", "cmd": "konsole", "icon": "utilities-terminal", "fallback_icon": "terminal"},
+    {"name": "SysInfo", "cmd": "konsole --hold -e eclipse-sysinfo", "icon": "utilities-system-monitor", "fallback_icon": "system-search"},
+    {"name": "Installer", "cmd": "konsole -e 'sudo eclipse-installer'", "icon": "system-software-install", "fallback_icon": "system-run"},
+    {"name": "Drivers", "cmd": "konsole -e 'sudo eclipse-drivers'", "icon": "preferences-desktop-display", "fallback_icon": "video-display"},
 ]
 
 CSS_STYLE = """
