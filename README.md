@@ -1,17 +1,17 @@
 # Eclipse OS v1.0 ("Syzygy")
 
-Eclipse OS is a custom, bootable 64-bit Linux desktop operating system built on Debian 12 (Bookworm) `amd64`. It combines an XFCE desktop environment with a dark aesthetic, custom GRUB bootloader graphics, native Python 3 administration tools, and an automated ISO build toolchain.
+Eclipse OS is a bootable 64-bit Linux desktop operating system based on Debian 12 (Bookworm). The project includes the OS configuration and an automated ISO build toolchain.
 
 ## Features
 
 - **Base System**: Debian 12 (Bookworm) `amd64` core with Linux 6.1 LTS kernel, `systemd`, NetworkManager, and OverlayFS read-write live boot.
 - **Boot Support**: Dual UEFI (`x86_64-efi`) and Legacy BIOS (`i386-pc`) boot targets using GRUB2.
-- **Desktop Environment**: XFCE 4.18 desktop styled with the `Eclipse-Dark` GTK theme (Obsidian `#0B0D14` background with Deep Neon Violet `#8B5CF6` and Cyber Cyan `#06B6D4` accents).
+- **Desktop Environment**: XFCE 4.18 with the `Eclipse-Dark` GTK theme. The palette uses an Obsidian (`#0B0D14`) background with Deep Neon Violet (`#8B5CF6`) and Cyber Cyan (`#06B6D4`) accents.
 - **Custom Utilities**:
-  - `eclipse-sysinfo`: System information and resource monitor written in Python 3 using `rich`.
-  - `eclipse-control`: Control panel CLI for desktop tweaks, theme switching, and developer tool installation.
-  - `eclipse-installer`: Live-to-disk installation wizard with automatic partitioning and GRUB bootloader setup.
-- **Automated Toolchain**: Four modular scripts in `scripts/` to bootstrap, configure, package, and test the operating system inside QEMU.
+  - `eclipse-sysinfo`: System information and resource monitor written in Python 3.
+  - `eclipse-control`: Control panel CLI for desktop settings and developer tool installation.
+  - `eclipse-installer`: Live-to-disk installation wizard with automatic partitioning and GRUB setup.
+- **Automated Toolchain**: Four scripts in `scripts/` bootstrap, configure, package, and test the operating system in QEMU.
 
 ## Repository Layout
 
@@ -29,7 +29,7 @@ Eclipse OS is a custom, bootable 64-bit Linux desktop operating system built on 
 
 ### Prerequisites
 
-You need a 64-bit Linux host (Debian, Ubuntu, Linux Mint, or Arch) with superuser privileges and the following build dependencies installed:
+You need a 64-bit Linux host (Debian, Ubuntu, Linux Mint, or Arch) with root privileges and the following dependencies:
 
 ```bash
 sudo apt update
@@ -59,11 +59,11 @@ sudo apt install -y debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd6
    sudo bash scripts/03-package-iso.sh
    ```
 
-   The generated ISO image will be stored at `build/output/eclipse-os-v1.0-x86_64.iso`.
+   The script writes the final ISO image to `build/output/eclipse-os-v1.0-x86_64.iso`.
 
 ### Running in QEMU
 
-Test the compiled ISO image inside QEMU with KVM acceleration:
+Test the ISO image inside QEMU with KVM acceleration:
 
 ```bash
 bash scripts/04-test-qemu.sh

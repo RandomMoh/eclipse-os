@@ -1,10 +1,10 @@
-# Developer & Agent Guidelines for Eclipse OS
+# Developer and Agent Guidelines for Eclipse OS
 
-Welcome to the Eclipse OS project. This document provides clear context, architectural conventions, and guidelines for AI agents working in this codebase.
+Welcome to the Eclipse OS project. This document provides the architectural conventions and rules for AI agents working in this codebase.
 
 ## Project Summary
 
-Eclipse OS is a custom, bootable 64-bit Linux desktop operating system built on Debian 12 (Bookworm) `amd64`. The project contains both the OS configuration (desktop layout, theme, GTK styling, GRUB boot graphics, native Python utilities) and an automated build toolchain (`eclipse-os-builder`) that builds a bootable `.iso` image.
+Eclipse OS is a bootable 64-bit Linux desktop operating system based on Debian 12 (Bookworm). The project contains the OS configuration and the `eclipse-os-builder` toolchain that produces a bootable `.iso` image.
 
 ## Key Directory Structure
 
@@ -36,21 +36,21 @@ Eclipse OS is a custom, bootable 64-bit Linux desktop operating system built on 
    - `fix: correct grub path`
    - `style: update gtk theme`
 
-2. **Writing & Tone Rules**:
-   - Do not use bloated AI jargon or promotional words (e.g. "delve", "testament", "pivotal", "vibrant", "tapestry", "crucial", "showcasing").
-   - Do not use em dashes (`—`) or en dashes (`–`). Use periods, commas, or colons instead.
+2. **Writing Rules**:
+   - Do not use AI jargon or promotional words (for example: delve, testament, pivotal, vibrant, tapestry, crucial, showcasing).
+   - Do not use em dashes or en dashes. Use periods, commas, or colons instead.
    - Keep documentation direct, factual, and practical.
 
 3. **Bash Script Requirements**:
    - Every script in `scripts/` must begin with `#!/usr/bin/env bash` and `set -euo pipefail`.
-   - Ensure paths are referenced relative to the project root directory.
-   - Provide clean status output during step execution using colored terminal echoes.
+   - Reference all paths relative to the project root directory.
+   - Print status output during step execution using colored terminal variables.
 
 4. **Python Utility Requirements**:
-   - Python code in `src/` must run under Python 3.9+.
+   - Run Python code in `src/` under Python 3.9+.
    - Use the `rich` library for TUI styling and formatted terminal output.
    - Scripts placed in `/usr/local/bin/` must have execution permissions (`chmod +x`).
 
 5. **Build Pipeline Safety**:
-   - Virtual filesystem mounts (`/proc`, `/sys`, `/dev`, `/dev/pts`) inside `build/rootfs` must be cleaned up or unmounted safely on trap or script exit.
-   - Never write transient build output into tracked git directories. `build/` is ignored by `.gitignore`.
+   - Clean up or safely unmount virtual filesystem mounts (`/proc`, `/sys`, `/dev`, `/dev/pts`) inside `build/rootfs` on trap or script exit.
+   - Do not write transient build output into tracked git directories. The `.gitignore` file ignores the `build/` directory.
