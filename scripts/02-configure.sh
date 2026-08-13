@@ -453,9 +453,18 @@ chmod 0440 "$ROOTFS/etc/sudoers.d/eclipse"
 # Purge leftover session desktop files
 rm -f "$ROOTFS/usr/share/xsessions/xfce.desktop" "$ROOTFS/usr/share/xsessions/lightdm-xsession.desktop" 2>/dev/null || true
 
-# SDDM requires an explicit password for normal logins. Leaving the password blank allows the user to log in just by hitting Enter, bypassing the autologin loop.
-echo -e "${BLUE}[+] Ensuring SDDM autologin is disabled...${RESET}"
-rm -f "$ROOTFS/etc/sddm.conf.d/autologin.conf" 2>/dev/null || true
+# Configure SDDM explicitly to launch Plasma X11 and set default session
+echo -e "${BLUE}[+] Configuring SDDM and default X11 session manager...${RESET}"
+mkdir -p "$ROOTFS/etc" "$ROOTFS/etc/sddm.conf.d"
+cp -f "$PROJECT_ROOT/config/kde/sddm.conf" "$ROOTFS/etc/sddm.conf"
+cp -f "$PROJECT_ROOT/config/kde/.dmrc" "$ROOTFS/etc/skel/.dmrc"
+if [[ -d "$ROOTFS/home/eclipse" ]]; then
+    cp -f "$PROJECT_ROOT/config/kde/.dmrc" "$ROOTFS/home/eclipse/.dmrc"
+    chroot "$ROOTFS" chown eclipse:eclipse /home/eclipse/.dmrc 2>/dev/null || true
+fi
+
+# Explicitly set default x-session-manager alternative to KDE Plasma X11
+chroot "$ROOTFS" update-alternatives --set x-session-manager /usr/bin/startplasma-x11 2>/dev/null || true
 
 # LightDM can hijack the display-manager symlink during package installation. Hardcoding the SDDM symlink guarantees the correct display manager starts.
 chroot "$ROOTFS" bash -c "rm -f /etc/systemd/system/display-manager.service && systemctl enable sddm"
