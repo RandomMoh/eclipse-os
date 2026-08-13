@@ -13,8 +13,7 @@ Eclipse OS is a bootable 64-bit Linux desktop operating system based on Debian 1
 ├── build/                 # Scratch build directories (rootfs chroot, iso staging)
 ├── config/                # Configuration files and visual assets
 │   ├── grub/              # GRUB theme (background, fonts, theme.txt) and grub.cfg
-│   ├── gtk/               # Custom GTK3 theme (Eclipse-Dark: Obsidian + Neon Violet/Cyan)
-│   ├── xfce/              # Pre-configured XFCE XML settings (panel, desktop, wm)
+│   ├── kde/               # KDE Plasma configuration files and theme settings
 │   └── wallpaper/         # High-resolution desktop background
 ├── src/                   # Native Python 3 utilities
 │   ├── eclipse-sysinfo    # Terminal resource & spec display
