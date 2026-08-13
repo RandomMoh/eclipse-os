@@ -85,9 +85,12 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
     xserver-xorg-video-all \
     xserver-xorg-input-all \
     firmware-linux \
+    firmware-amd-graphics \
+    firmware-misc-nonfree \
     firmware-iwlwifi \
     firmware-realtek \
     firmware-atheros \
+    gpgv \
     bluez \
     bluez-tools \
     bluetooth \
@@ -425,6 +428,7 @@ chroot "$ROOTFS" bash -c "rm -f /etc/systemd/system/display-manager.service && s
 echo -e "${BLUE}[+] Enabling SDDM display manager and graphical default target...${RESET}"
 chroot "$ROOTFS" systemctl set-default graphical.target
 chroot "$ROOTFS" systemctl enable sddm 2>/dev/null || true
+chroot "$ROOTFS" systemctl disable podman-restart podman-auto-update 2>/dev/null || true
 
 echo -e "${YELLOW}[*] Cleaning up package cache inside rootfs...${RESET}"
 chroot "$ROOTFS" apt-get clean
