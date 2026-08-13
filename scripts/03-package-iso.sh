@@ -86,7 +86,9 @@ if [[ -d "$PROJECT_ROOT/config/grub/eclipse-grub-theme" ]]; then
     cp -r "$PROJECT_ROOT/config/grub/eclipse-grub-theme" "$ISO_STAGING/boot/grub/themes/eclipse-grub-theme"
 fi
 
-# Build EFI Bootloader
+# The EFI bootloader is a standalone binary with our grub.cfg baked in.
+# grub-mkstandalone wraps the config inside a memdisk so the EFI firmware
+# can find it without needing a separate filesystem partition.
 echo -e "${YELLOW}[*] Building EFI standalone bootloader (BOOTX64.EFI)...${RESET}"
 if ! command -v grub-mkstandalone &>/dev/null; then
     echo -e "${RED}Error: grub-mkstandalone is not installed${RESET}" >&2
@@ -100,25 +102,70 @@ grub-mkstandalone \
     --fonts="" \
     "boot/grub/grub.cfg=$ISO_STAGING/boot/grub/grub.cfg"
 
-# Build Hybrid Dual UEFI/BIOS ISO
-echo -e "${YELLOW}[*] Building Hybrid Dual UEFI/BIOS ISO image...${RESET}"
+# Pack the EFI binary into a FAT12/16 image that xorriso can use as
+# an El Torito EFI boot catalog entry. Without this image, UEFI
+# firmware has no way to locate the bootloader on the ISO.
+echo -e "${YELLOW}[*] Creating EFI boot image (efi.img)...${RESET}"
+EFI_IMG="$ISO_STAGING/boot/grub/efi.img"
+dd if=/dev/zero of="$EFI_IMG" bs=1M count=4
+mkfs.vfat "$EFI_IMG"
+mmd -i "$EFI_IMG" ::EFI
+mmd -i "$EFI_IMG" ::EFI/BOOT
+mcopy -i "$EFI_IMG" "$ISO_STAGING/EFI/BOOT/BOOTX64.EFI" ::EFI/BOOT/BOOTX64.EFI
+
+# For BIOS boot, grub needs an i386-pc core image with the correct
+# module prefix pointing to /boot/grub/i386-pc on the ISO filesystem.
+# This avoids the "invalid magic number" error caused by grub-mkrescue
+# embedding modules with a mismatched prefix path.
+echo -e "${YELLOW}[*] Building BIOS boot image (core.img + eltorito.img)...${RESET}"
+BIOS_MODS_DIR="/usr/lib/grub/i386-pc"
+if [[ ! -d "$BIOS_MODS_DIR" ]]; then
+    echo -e "${YELLOW}[!] i386-pc GRUB modules not found, BIOS boot will be skipped (EFI-only ISO)${RESET}"
+    BIOS_BOOT=false
+else
+    BIOS_BOOT=true
+    mkdir -p "$ISO_STAGING/boot/grub/i386-pc"
+    cp "$BIOS_MODS_DIR"/*.mod "$ISO_STAGING/boot/grub/i386-pc/"
+    cp "$BIOS_MODS_DIR"/*.lst "$ISO_STAGING/boot/grub/i386-pc/" 2>/dev/null || true
+
+    grub-mkimage \
+        -O i386-pc \
+        -o "$ISO_STAGING/boot/grub/i386-pc/core.img" \
+        -p /boot/grub \
+        --config="$ISO_STAGING/boot/grub/grub.cfg" \
+        biosdisk iso9660 linux normal search configfile part_gpt part_msdos fat ext2 all_video gfxterm font
+
+    cat "$BIOS_MODS_DIR/cdboot.img" "$ISO_STAGING/boot/grub/i386-pc/core.img" \
+        > "$ISO_STAGING/boot/grub/i386-pc/eltorito.img"
+fi
+
+echo -e "${YELLOW}[*] Building Hybrid UEFI/BIOS ISO image...${RESET}"
 ISO_OUTPUT="${OUTPUT_DIR}/eclipse-os-v1.0-x86_64.iso"
 
-if command -v grub-mkrescue &>/dev/null; then
-    grub-mkrescue -o "$ISO_OUTPUT" "$ISO_STAGING" -- -volid "ECLIPSE_OS"
-elif command -v xorriso &>/dev/null; then
+if $BIOS_BOOT; then
     xorriso -as mkisofs \
         -r -V "ECLIPSE_OS" \
-        -cache-inodes \
-        -J -l \
+        -J -joliet-long \
         -b boot/grub/i386-pc/eltorito.img \
-        -c boot.catalog \
         -no-emul-boot -boot-load-size 4 -boot-info-table \
+        --grub2-boot-info \
+        --grub2-mbr "$BIOS_MODS_DIR/boot_hybrid.img" \
+        -eltorito-alt-boot \
+        -e boot/grub/efi.img \
+        -no-emul-boot \
+        -isohybrid-gpt-basdat \
         -o "$ISO_OUTPUT" \
         "$ISO_STAGING"
 else
-    echo -e "${RED}Error: Neither grub-mkrescue nor xorriso is installed${RESET}" >&2
-    exit 1
+    xorriso -as mkisofs \
+        -r -V "ECLIPSE_OS" \
+        -J -joliet-long \
+        -eltorito-alt-boot \
+        -e boot/grub/efi.img \
+        -no-emul-boot \
+        -isohybrid-gpt-basdat \
+        -o "$ISO_OUTPUT" \
+        "$ISO_STAGING"
 fi
 
 # Output summary showing generated ISO size and path
