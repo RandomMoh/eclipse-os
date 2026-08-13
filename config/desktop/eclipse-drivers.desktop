@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=Eclipse Driver Manager
+Comment=Detect hardware and install proprietary GPU drivers
+Exec=konsole -e "sudo eclipse-drivers"
+Icon=preferences-desktop-display
+Terminal=false
+Type=Application
+Categories=System;Settings;HardwareSettings;

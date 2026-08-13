@@ -1,0 +1,390 @@
+#!/usr/bin/env python3
+"""
+Eclipse Driver Manager
+Detects GPU hardware and manages proprietary driver installation.
+"""
+
+import os
+import sys
+import subprocess
+import re
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
+                             QHBoxLayout, QLabel, QPushButton, QFrame,
+                             QScrollArea, QMessageBox, QProgressBar)
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
+from PyQt5.QtGui import QFont
+
+
+def run_cmd(cmd, check=False):
+    """Run a shell command and return stdout."""
+    try:
+        res = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=check)
+        return res.stdout.strip()
+    except subprocess.CalledProcessError:
+        return ""
+
+
+def detect_gpus():
+    """Scan PCI bus for VGA/3D controllers and return a list of GPU dicts."""
+    gpus = []
+    raw = run_cmd("lspci -nn 2>/dev/null")
+    if not raw:
+        return gpus
+
+    for line in raw.splitlines():
+        if "VGA" in line or "3D controller" in line or "Display controller" in line:
+            gpu = {"raw": line, "vendor": "Unknown", "model": line, "driver_in_use": "", "pci_id": ""}
+
+            # Extract PCI vendor:device ID like [10de:2504]
+            id_match = re.search(r'\[([0-9a-fA-F]{4}):([0-9a-fA-F]{4})\]', line)
+            if id_match:
+                gpu["pci_id"] = f"{id_match.group(1)}:{id_match.group(2)}"
+                vid = id_match.group(1).lower()
+                if vid == "10de":
+                    gpu["vendor"] = "NVIDIA"
+                elif vid in ("1002", "1022"):
+                    gpu["vendor"] = "AMD"
+                elif vid == "8086":
+                    gpu["vendor"] = "Intel"
+
+            # Clean up model name
+            model_match = re.search(r'(?:VGA|3D|Display)\s+(?:compatible\s+)?controller\s*(?:\[\w+\])?\s*:\s*(.+?)(?:\s*\[[\da-fA-F:]+\]\s*$)', line)
+            if model_match:
+                gpu["model"] = model_match.group(1).strip()
+            else:
+                parts = line.split(": ", 1)
+                if len(parts) > 1:
+                    gpu["model"] = re.sub(r'\s*\[[\da-fA-F:]+\]\s*$', '', parts[1]).strip()
+
+            # Get kernel driver in use
+            pci_addr_match = re.match(r'^(\S+)', line)
+            if pci_addr_match:
+                addr = pci_addr_match.group(1)
+                driver_info = run_cmd(f"lspci -k -s {addr} 2>/dev/null")
+                drv_match = re.search(r'Kernel driver in use:\s*(\S+)', driver_info)
+                if drv_match:
+                    gpu["driver_in_use"] = drv_match.group(1)
+
+            gpus.append(gpu)
+    return gpus
+
+
+def get_available_nvidia_packages():
+    """Check which NVIDIA driver packages are available in apt."""
+    packages = []
+    raw = run_cmd("apt-cache search '^nvidia-driver' 2>/dev/null")
+    for line in raw.splitlines():
+        parts = line.split(" - ", 1)
+        if len(parts) == 2 and re.match(r'^nvidia-driver-?\d*$', parts[0].strip()):
+            packages.append({"name": parts[0].strip(), "description": parts[1].strip()})
+    # Also check the meta package
+    if not packages:
+        meta = run_cmd("apt-cache show nvidia-driver 2>/dev/null")
+        if meta:
+            packages.append({"name": "nvidia-driver", "description": "NVIDIA proprietary driver (current recommended)"})
+    return packages
+
+
+def is_package_installed(pkg):
+    """Check if a Debian package is installed."""
+    status = run_cmd(f"dpkg-query -W -f='${{Status}}' {pkg} 2>/dev/null")
+    return "install ok installed" in status
+
+
+class InstallThread(QThread):
+    """Background thread for driver installation."""
+    progress = pyqtSignal(str)
+    finished_signal = pyqtSignal(bool, str)
+
+    def __init__(self, package_name):
+        super().__init__()
+        self.package_name = package_name
+
+    def run(self):
+        self.progress.emit(f"Updating package lists...")
+        run_cmd("apt-get update -qq")
+
+        self.progress.emit(f"Installing {self.package_name}...")
+        result = run_cmd(f"DEBIAN_FRONTEND=noninteractive apt-get install -y {self.package_name} 2>&1")
+
+        if is_package_installed(self.package_name):
+            self.finished_signal.emit(True, f"{self.package_name} installed successfully. A reboot is required.")
+        else:
+            self.finished_signal.emit(False, f"Installation failed.\n\n{result[-500:]}")
+
+
+class DriverCard(QFrame):
+    """A single driver/GPU card widget."""
+    def __init__(self, gpu, parent_window, parent=None):
+        super().__init__(parent)
+        self.gpu = gpu
+        self.parent_window = parent_window
+
+        # Doppel-Bezel shell
+        self.setStyleSheet("""
+            QFrame#driverCard {
+                background-color: #0C0D11;
+                border-radius: 20px;
+                border: 1px solid rgba(255, 255, 255, 0.06);
+            }
+        """)
+        self.setObjectName("driverCard")
+
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(6, 6, 6, 6)
+
+        core = QFrame()
+        core.setStyleSheet("""
+            QFrame {
+                background-color: #050505;
+                border-radius: 14px;
+                border: none;
+            }
+        """)
+        inner = QVBoxLayout(core)
+        inner.setContentsMargins(28, 28, 28, 28)
+        inner.setSpacing(16)
+
+        # Header row: vendor badge + model
+        header = QHBoxLayout()
+
+        vendor_colors = {
+            "NVIDIA": "#76B900",
+            "AMD": "#ED1C24",
+            "Intel": "#0071C5",
+            "Unknown": "#888888"
+        }
+        badge_color = vendor_colors.get(gpu["vendor"], "#888888")
+
+        vendor_badge = QLabel(gpu["vendor"].upper())
+        vendor_badge.setStyleSheet(f"""
+            color: {badge_color};
+            font-size: 10px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            padding: 4px 10px;
+            border: 1px solid {badge_color};
+            border-radius: 6px;
+            background: transparent;
+        """)
+        vendor_badge.setFixedHeight(24)
+
+        header.addWidget(vendor_badge)
+        header.addStretch()
+        inner.addLayout(header)
+
+        # Model name
+        model_label = QLabel(gpu["model"])
+        model_label.setStyleSheet("color: #EAEAEA; font-size: 16px; font-weight: 600; background: transparent; border: none;")
+        model_label.setWordWrap(True)
+        inner.addWidget(model_label)
+
+        # Current driver info
+        current_driver = gpu["driver_in_use"] or "None detected"
+        driver_label = QLabel(f"Active Driver:  {current_driver}")
+        driver_label.setStyleSheet("color: rgba(255,255,255,0.4); font-size: 12px; background: transparent; border: none;")
+        inner.addWidget(driver_label)
+
+        # Status and action
+        if gpu["vendor"] == "NVIDIA":
+            if gpu["driver_in_use"] == "nvidia":
+                status = QLabel("Proprietary driver is active.")
+                status.setStyleSheet("color: #76B900; font-size: 12px; background: transparent; border: none;")
+                inner.addWidget(status)
+            else:
+                nvidia_installed = is_package_installed("nvidia-driver")
+                if nvidia_installed:
+                    status = QLabel("NVIDIA driver is installed but not loaded. Reboot required.")
+                    status.setStyleSheet("color: #FFA500; font-size: 12px; background: transparent; border: none;")
+                    inner.addWidget(status)
+                else:
+                    # Show install button
+                    btn_row = QHBoxLayout()
+                    install_btn = QPushButton("Install NVIDIA Proprietary Driver")
+                    install_btn.setCursor(Qt.PointingHandCursor)
+                    install_btn.setStyleSheet("""
+                        QPushButton {
+                            background-color: #EAEAEA;
+                            color: #050505;
+                            border: none;
+                            border-radius: 20px;
+                            padding: 10px 24px;
+                            font-size: 12px;
+                            font-weight: 600;
+                        }
+                        QPushButton:hover {
+                            background-color: #FFFFFF;
+                        }
+                        QPushButton:pressed {
+                            background-color: #CCCCCC;
+                        }
+                        QPushButton:disabled {
+                            background-color: rgba(255,255,255,0.1);
+                            color: rgba(255,255,255,0.3);
+                        }
+                    """)
+                    install_btn.clicked.connect(lambda: self.parent_window.install_nvidia())
+                    btn_row.addWidget(install_btn)
+                    btn_row.addStretch()
+                    inner.addLayout(btn_row)
+
+                    hint = QLabel("Uses nouveau (open source) currently. Proprietary driver recommended for gaming and CUDA.")
+                    hint.setStyleSheet("color: rgba(255,255,255,0.3); font-size: 11px; background: transparent; border: none;")
+                    hint.setWordWrap(True)
+                    inner.addWidget(hint)
+
+        elif gpu["vendor"] == "AMD":
+            status = QLabel("Using amdgpu (open source). This is the recommended driver for AMD GPUs.")
+            status.setStyleSheet("color: rgba(255,255,255,0.4); font-size: 12px; background: transparent; border: none;")
+            status.setWordWrap(True)
+            inner.addWidget(status)
+
+            ok_label = QLabel("No action needed.")
+            ok_label.setStyleSheet("color: #4CAF50; font-size: 12px; font-weight: 600; background: transparent; border: none;")
+            inner.addWidget(ok_label)
+
+        elif gpu["vendor"] == "Intel":
+            status = QLabel("Using i915 / xe (open source). This is the recommended driver for Intel GPUs.")
+            status.setStyleSheet("color: rgba(255,255,255,0.4); font-size: 12px; background: transparent; border: none;")
+            status.setWordWrap(True)
+            inner.addWidget(status)
+
+            ok_label = QLabel("No action needed.")
+            ok_label.setStyleSheet("color: #4CAF50; font-size: 12px; font-weight: 600; background: transparent; border: none;")
+            inner.addWidget(ok_label)
+
+        outer.addWidget(core)
+
+
+class DriverManager(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Eclipse Driver Manager")
+        self.resize(700, 600)
+        self.setStyleSheet("QMainWindow { background-color: #050505; }")
+
+        self.install_thread = None
+
+        central = QWidget()
+        self.setCentralWidget(central)
+        main_layout = QVBoxLayout(central)
+        main_layout.setContentsMargins(40, 40, 40, 40)
+        main_layout.setSpacing(32)
+
+        # Header
+        header_small = QLabel("ECLIPSE OS")
+        header_small.setStyleSheet("color: rgba(255,255,255,0.3); font-size: 10px; font-weight: bold; letter-spacing: 3px;")
+        main_layout.addWidget(header_small)
+
+        header_main = QLabel("Driver Manager")
+        header_main.setStyleSheet("color: #EAEAEA; font-size: 28px; font-weight: bold;")
+        main_layout.addWidget(header_main)
+
+        subtitle = QLabel("Manage proprietary graphics drivers for your hardware.")
+        subtitle.setStyleSheet("color: rgba(255,255,255,0.35); font-size: 13px; margin-bottom: 8px;")
+        main_layout.addWidget(subtitle)
+
+        # Progress bar (hidden by default)
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, 0)  # indeterminate
+        self.progress_bar.setFixedHeight(4)
+        self.progress_bar.setStyleSheet("""
+            QProgressBar { background: rgba(255,255,255,0.05); border: none; border-radius: 2px; }
+            QProgressBar::chunk { background: #EAEAEA; border-radius: 2px; }
+        """)
+        self.progress_bar.hide()
+        main_layout.addWidget(self.progress_bar)
+
+        self.status_label = QLabel("")
+        self.status_label.setStyleSheet("color: rgba(255,255,255,0.5); font-size: 12px;")
+        self.status_label.hide()
+        main_layout.addWidget(self.status_label)
+
+        # Scroll area for GPU cards
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
+        scroll_widget = QWidget()
+        scroll_widget.setStyleSheet("background: transparent;")
+        self.card_layout = QVBoxLayout(scroll_widget)
+        self.card_layout.setSpacing(20)
+        self.card_layout.setContentsMargins(0, 0, 0, 0)
+        scroll.setWidget(scroll_widget)
+        main_layout.addWidget(scroll)
+
+        # Scan hardware
+        self.scan_hardware()
+
+    def scan_hardware(self):
+        gpus = detect_gpus()
+
+        if not gpus:
+            empty = QLabel("No GPU hardware detected. Run 'lspci' to verify PCI bus visibility.")
+            empty.setStyleSheet("color: rgba(255,255,255,0.4); font-size: 14px; padding: 40px;")
+            empty.setAlignment(Qt.AlignCenter)
+            self.card_layout.addWidget(empty)
+        else:
+            for gpu in gpus:
+                card = DriverCard(gpu, self)
+                self.card_layout.addWidget(card)
+
+        self.card_layout.addStretch()
+
+    def install_nvidia(self):
+        if os.geteuid() != 0:
+            QMessageBox.warning(self, "Root Required",
+                "This tool must be run as root to install drivers.\n\n"
+                "Run:  sudo eclipse-drivers")
+            return
+
+        reply = QMessageBox.question(self, "Install NVIDIA Driver",
+            "This will install the NVIDIA proprietary driver package.\n"
+            "A system reboot will be required after installation.\n\n"
+            "Continue?",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+
+        if reply != QMessageBox.Yes:
+            return
+
+        self.progress_bar.show()
+        self.status_label.show()
+        self.status_label.setText("Preparing installation...")
+
+        self.install_thread = InstallThread("nvidia-driver")
+        self.install_thread.progress.connect(self.on_install_progress)
+        self.install_thread.finished_signal.connect(self.on_install_finished)
+        self.install_thread.start()
+
+    def on_install_progress(self, msg):
+        self.status_label.setText(msg)
+
+    def on_install_finished(self, success, msg):
+        self.progress_bar.hide()
+        self.status_label.hide()
+
+        if success:
+            QMessageBox.information(self, "Installation Complete", msg)
+        else:
+            QMessageBox.critical(self, "Installation Failed", msg)
+
+        # Refresh the UI
+        while self.card_layout.count():
+            child = self.card_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+        self.scan_hardware()
+
+
+def main():
+    app = QApplication(sys.argv)
+    font = app.font()
+    font.setFamily("sans-serif")
+    app.setFont(font)
+
+    window = DriverManager()
+    window.show()
+    sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    main()
