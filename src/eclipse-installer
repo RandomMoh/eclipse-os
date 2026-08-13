@@ -3,17 +3,13 @@
 import os
 import sys
 import json
-import argparse
 import subprocess
 import shutil
-import time
-from rich.console import Console
-from rich.panel import Panel
-from rich.table import Table
-from rich.prompt import Prompt, Confirm
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
-
-console = Console()
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
+                             QHBoxLayout, QLabel, QProgressBar, QPushButton,
+                             QComboBox, QLineEdit, QStackedWidget, QMessageBox, QFrame, QGridLayout)
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5.QtGui import QFont, QPalette
 
 def check_root_privileges():
     return os.geteuid() == 0
@@ -32,23 +28,8 @@ def scan_block_devices():
                     devices.append((dev_name, size, model.strip()))
     except Exception:
         pass
-
-    if not devices:
-        try:
-            res = subprocess.run(["lsblk", "-dn", "-o", "NAME,SIZE,TYPE,MODEL"], capture_output=True, text=True, check=False)
-            for line in res.stdout.splitlines():
-                parts = line.strip().split(maxsplit=3)
-                if len(parts) >= 3 and parts[2] in ("disk", "loop"):
-                    dev_name = "/dev/" + parts[0]
-                    size = parts[1]
-                    model = parts[3] if len(parts) > 3 else "Storage Disk"
-                    devices.append((dev_name, size, model))
-        except Exception:
-            pass
-
     if not devices:
         devices = [("/dev/sda", "64.0G", "Virtual Storage Disk"), ("/dev/nvme0n1", "512.0G", "NVMe Solid State Drive")]
-
     return devices
 
 def get_partition_names(target_disk):
@@ -57,147 +38,251 @@ def get_partition_names(target_disk):
     else:
         return f"{target_disk}1", f"{target_disk}2"
 
-def run_command(cmd, dry_run=False, ignore_error=False):
-    if dry_run:
-        console.print(f"[dim][DRY-RUN][/dim] Executing: [cyan]{' '.join(cmd)}[/cyan]")
-        return True
-    try:
-        res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, check=False)
-        if res.returncode != 0 and not ignore_error:
-            console.print(f"[bold red]Command failed:[/bold red] {' '.join(cmd)}")
-            console.print(f"[red]{res.stderr.strip()}[/red]")
-            return False
-        return True
-    except Exception as e:
-        if not ignore_error:
-            console.print(f"[bold red]Execution error:[/bold red] {e}")
-        return False
+class InstallThread(QThread):
+    progress = pyqtSignal(int, str)
+    finished = pyqtSignal(bool, str)
 
-def ask_password(prompt_text):
-    if sys.stdin.isatty():
-        return Prompt.ask(prompt_text, password=True)
-    else:
-        console.print(f"{prompt_text}: ", end="")
-        line = sys.stdin.readline().strip()
-        return line if line else "eclipse"
+    def __init__(self, config):
+        super().__init__()
+        self.config = config
+
+    def run_cmd(self, cmd):
+        res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, check=False)
+        if res.returncode != 0:
+            raise Exception(res.stderr.strip())
+
+    def run(self):
+        target = self.config['disk']
+        efi_part, root_part = get_partition_names(target)
+        
+        steps = [
+            ("Creating GPT Partition Table", ["parted", "-s", target, "mklabel", "gpt"]),
+            ("Creating EFI Partition", ["parted", "-s", target, "mkpart", "ESP", "fat32", "1MiB", "513MiB"]),
+            ("Setting EFI Flag", ["parted", "-s", target, "set", "1", "esp", "on"]),
+            ("Creating Root Partition", ["parted", "-s", target, "mkpart", "primary", "ext4", "513MiB", "100%"]),
+            ("Formatting EFI (FAT32)", ["mkfs.vfat", "-F32", efi_part]),
+            ("Formatting Root (Ext4)", ["mkfs.ext4", "-F", root_part]),
+            ("Mounting Root", ["mkdir", "-p", "/mnt/target"]),
+            ("Mounting Root", ["mount", root_part, "/mnt/target"]),
+            ("Mounting EFI", ["mkdir", "-p", "/mnt/target/boot/efi"]),
+            ("Mounting EFI", ["mount", efi_part, "/mnt/target/boot/efi"]),
+            ("Copying System (This may take a while)", ["rsync", "-aAX", "--exclude=/proc", "--exclude=/sys", "--exclude=/dev", "--exclude=/pts", "--exclude=/mnt", "--exclude=/tmp", "--exclude=/run", "/", "/mnt/target"]),
+            ("Installing GRUB", ["chroot", "/mnt/target", "grub-install", "--target=x86_64-efi", "--efi-directory=/boot/efi", "--bootloader-id=EclipseOS", "--recheck"]),
+            ("Updating GRUB Config", ["chroot", "/mnt/target", "update-grub"]),
+            ("Unmounting", ["umount", "-R", "/mnt/target"])
+        ]
+        
+        try:
+            total = len(steps)
+            for i, (desc, cmd) in enumerate(steps):
+                self.progress.emit(int((i/total)*100), desc)
+                self.run_cmd(cmd)
+            self.progress.emit(100, "Installation Complete!")
+            self.finished.emit(True, "Success")
+        except Exception as e:
+            self.finished.emit(False, str(e))
+
+class InstallerApp(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Eclipse OS Installer")
+        self.resize(800, 600)
+        self.setStyleSheet("background-color: #0B0D14; color: #E2E8F0; font-size: 14px;")
+        
+        self.stack = QStackedWidget()
+        self.setCentralWidget(self.stack)
+        
+        self.devices = scan_block_devices()
+        
+        self.setup_welcome_screen()
+        self.setup_disk_screen()
+        self.setup_user_screen()
+        self.setup_confirm_screen()
+        self.setup_install_screen()
+
+    def create_title(self, text):
+        lbl = QLabel(text)
+        lbl.setStyleSheet("color: #8B5CF6; font-size: 28px; font-weight: bold; margin-bottom: 20px;")
+        lbl.setAlignment(Qt.AlignCenter)
+        return lbl
+        
+    def create_btn(self, text, callback, primary=True):
+        btn = QPushButton(text)
+        bg = "#8B5CF6" if primary else "#1A1D2D"
+        btn.setStyleSheet(f"background-color: {bg}; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-weight: bold;")
+        btn.clicked.connect(callback)
+        return btn
+
+    def setup_welcome_screen(self):
+        w = QWidget()
+        l = QVBoxLayout(w)
+        l.setAlignment(Qt.AlignCenter)
+        l.addWidget(self.create_title("WELCOME TO ECLIPSE OS"))
+        desc = QLabel("Syzygy v1.0 Installer\n\nThis wizard will guide you through installing Eclipse OS to your local drive.")
+        desc.setAlignment(Qt.AlignCenter)
+        l.addWidget(desc)
+        l.addSpacing(40)
+        l.addWidget(self.create_btn("Begin Installation", lambda: self.stack.setCurrentIndex(1)), alignment=Qt.AlignCenter)
+        self.stack.addWidget(w)
+
+    def setup_disk_screen(self):
+        w = QWidget()
+        l = QVBoxLayout(w)
+        l.setContentsMargins(40, 40, 40, 40)
+        l.addWidget(self.create_title("SELECT DESTINATION"))
+        
+        self.disk_combo = QComboBox()
+        self.disk_combo.setStyleSheet("padding: 10px; background: #121520; border: 1px solid #1A1D2D;")
+        for d in self.devices:
+            self.disk_combo.addItem(f"{d[0]} - {d[1]} - {d[2]}", d[0])
+            
+        l.addWidget(QLabel("Choose a drive to install Eclipse OS. WARNING: ALL DATA WILL BE ERASED."))
+        l.addWidget(self.disk_combo)
+        l.addStretch()
+        
+        nav = QHBoxLayout()
+        nav.addWidget(self.create_btn("Back", lambda: self.stack.setCurrentIndex(0), False))
+        nav.addStretch()
+        nav.addWidget(self.create_btn("Next", lambda: self.stack.setCurrentIndex(2)))
+        l.addLayout(nav)
+        self.stack.addWidget(w)
+
+    def setup_user_screen(self):
+        w = QWidget()
+        l = QVBoxLayout(w)
+        l.setContentsMargins(40, 40, 40, 40)
+        l.addWidget(self.create_title("SYSTEM CONFIGURATION"))
+        
+        form = QGridLayout()
+        form.setSpacing(20)
+        
+        self.inp_host = QLineEdit("eclipse-os")
+        self.inp_user = QLineEdit("eclipse")
+        self.inp_pass = QLineEdit()
+        self.inp_pass.setEchoMode(QLineEdit.Password)
+        self.inp_tz = QLineEdit("UTC")
+        
+        style = "padding: 10px; background: #121520; border: 1px solid #1A1D2D; color: white;"
+        for inp in [self.inp_host, self.inp_user, self.inp_pass, self.inp_tz]:
+            inp.setStyleSheet(style)
+            
+        form.addWidget(QLabel("Hostname:"), 0, 0)
+        form.addWidget(self.inp_host, 0, 1)
+        form.addWidget(QLabel("Username:"), 1, 0)
+        form.addWidget(self.inp_user, 1, 1)
+        form.addWidget(QLabel("Password:"), 2, 0)
+        form.addWidget(self.inp_pass, 2, 1)
+        form.addWidget(QLabel("Timezone:"), 3, 0)
+        form.addWidget(self.inp_tz, 3, 1)
+        
+        l.addLayout(form)
+        l.addStretch()
+        
+        nav = QHBoxLayout()
+        nav.addWidget(self.create_btn("Back", lambda: self.stack.setCurrentIndex(1), False))
+        nav.addStretch()
+        nav.addWidget(self.create_btn("Next", self.prepare_summary))
+        l.addLayout(nav)
+        self.stack.addWidget(w)
+
+    def prepare_summary(self):
+        self.summary_lbl.setText(f"Disk: {self.disk_combo.currentText()}\n"
+                                 f"Hostname: {self.inp_host.text()}\n"
+                                 f"Username: {self.inp_user.text()}\n"
+                                 f"Timezone: {self.inp_tz.text()}")
+        self.stack.setCurrentIndex(3)
+
+    def setup_confirm_screen(self):
+        w = QWidget()
+        l = QVBoxLayout(w)
+        l.setContentsMargins(40, 40, 40, 40)
+        l.addWidget(self.create_title("CONFIRM INSTALLATION"))
+        
+        self.summary_lbl = QLabel()
+        self.summary_lbl.setStyleSheet("background: #121520; padding: 20px; border-radius: 8px;")
+        l.addWidget(self.summary_lbl)
+        
+        warn = QLabel("PROCEEDING WILL PERMANENTLY ERASE THE SELECTED DISK.")
+        warn.setStyleSheet("color: #FF5555; font-weight: bold; margin-top: 20px;")
+        l.addWidget(warn)
+        l.addStretch()
+        
+        nav = QHBoxLayout()
+        nav.addWidget(self.create_btn("Back", lambda: self.stack.setCurrentIndex(2), False))
+        nav.addStretch()
+        nav.addWidget(self.create_btn("Install", self.start_install))
+        l.addLayout(nav)
+        self.stack.addWidget(w)
+
+    def setup_install_screen(self):
+        w = QWidget()
+        l = QVBoxLayout(w)
+        l.setAlignment(Qt.AlignCenter)
+        l.addWidget(self.create_title("INSTALLING"))
+        
+        self.prog_lbl = QLabel("Preparing...")
+        self.prog_lbl.setAlignment(Qt.AlignCenter)
+        l.addWidget(self.prog_lbl)
+        
+        self.prog_bar = QProgressBar()
+        self.prog_bar.setStyleSheet("""
+            QProgressBar { background: #121520; border: none; height: 10px; border-radius: 5px; }
+            QProgressBar::chunk { background: #06B6D4; border-radius: 5px; }
+        """)
+        self.prog_bar.setTextVisible(False)
+        l.addWidget(self.prog_bar)
+        
+        self.btn_done = self.create_btn("Finish & Reboot", sys.exit)
+        self.btn_done.hide()
+        l.addSpacing(30)
+        l.addWidget(self.btn_done, alignment=Qt.AlignCenter)
+        
+        self.stack.addWidget(w)
+
+    def start_install(self):
+        if not check_root_privileges():
+            QMessageBox.critical(self, "Error", "Root privileges are required. Run with sudo.")
+            sys.exit(1)
+            
+        self.stack.setCurrentIndex(4)
+        config = {
+            'disk': self.disk_combo.currentData(),
+            'host': self.inp_host.text(),
+            'user': self.inp_user.text(),
+            'pass': self.inp_pass.text(),
+            'tz': self.inp_tz.text()
+        }
+        
+        self.thread = InstallThread(config)
+        self.thread.progress.connect(self.update_progress)
+        self.thread.finished.connect(self.install_finished)
+        self.thread.start()
+
+    def update_progress(self, pct, desc):
+        self.prog_bar.setValue(pct)
+        self.prog_lbl.setText(desc)
+
+    def install_finished(self, success, msg):
+        if success:
+            self.prog_bar.setValue(100)
+            self.prog_lbl.setText("Installation successfully completed!")
+            self.prog_lbl.setStyleSheet("color: #50FA7B; font-weight: bold;")
+            self.btn_done.show()
+        else:
+            self.prog_lbl.setText(f"Error: {msg}")
+            self.prog_lbl.setStyleSheet("color: #FF5555; font-weight: bold;")
 
 def main():
-    parser = argparse.ArgumentParser(
-        prog="eclipse-installer",
-        description="Eclipse OS Live-to-Disk Interactive Installer",
-        formatter_class=argparse.RawDescriptionHelpFormatter
-    )
-    parser.add_argument("--dry-run", action="store_true", help="Simulate installation sequence without writing to disk")
-    args = parser.parse_args()
-
-    console.print(Panel(
-        "[bold #3584E4]Eclipse OS Live-to-Disk Installer[/bold #3584E4]\n"
-        "[italic #FFFFFF]Syzygy v1.0 | Fedora Edition[/italic #FFFFFF]",
-        border_style="#1C71D8",
-        padding=(1, 2)
-    ))
-
-    if not check_root_privileges() and not args.dry_run:
-        console.print(Panel(
-            "[bold red]Root privileges required to run eclipse-installer.[/bold red]\n"
-            "Please re-run this command with [bold yellow]sudo eclipse-installer[/bold yellow].",
-            title="[bold red]Permission Denied[/bold red]",
-            border_style="red"
-        ))
-        sys.exit(1)
-
-    devices = scan_block_devices()
-    dev_table = Table(title="[bold #62A0EA]Detected Block Devices[/bold #62A0EA]", border_style="#1C71D8", header_style="bold #62A0EA")
-    dev_table.add_column("Device Node", style="bold #FFFFFF")
-    dev_table.add_column("Capacity", style="#62A0EA")
-    dev_table.add_column("Model / Description", style="dim white")
-
-    valid_choices = []
-    for idx, (node, size, model) in enumerate(devices, 1):
-        dev_table.add_row(f"[{idx}] {node}", size, model)
-        valid_choices.extend([str(idx), node])
-
-    console.print(dev_table)
-
-    selected_choice = Prompt.ask(
-        "[bold #62A0EA]Select target storage device (number or device path)[/bold #62A0EA]",
-        choices=valid_choices,
-        default="1"
-    )
-
-    if selected_choice.isdigit():
-        idx = int(selected_choice) - 1
-        target_disk = devices[idx][0]
-    else:
-        target_disk = selected_choice
-
-    hostname = Prompt.ask("[bold #62A0EA]Target System Hostname[/bold #62A0EA]", default="eclipse-os")
-    username = Prompt.ask("[bold #62A0EA]Admin Username[/bold #62A0EA]", default="eclipse")
-    password = ask_password("[bold #62A0EA]User Password[/bold #62A0EA]")
-    timezone = Prompt.ask("[bold #62A0EA]System Timezone[/bold #62A0EA]", default="UTC")
-
-    efi_part, root_part = get_partition_names(target_disk)
-
-    console.print("\n")
-    console.print(Panel(
-        f"[bold red]WARNING: ALL DATA ON {target_disk} WILL BE PERMANENTLY DESTROYED![/bold red]\n\n"
-        f"[bold white]Target Storage Disk:[/bold white] [bold #62A0EA]{target_disk}[/bold #62A0EA]\n"
-        f"[bold white]EFI Boot Partition:[/bold white] [#62A0EA]{efi_part}[/#62A0EA] (512MB FAT32)\n"
-        f"[bold white]Root System Partition:[/bold white] [#62A0EA]{root_part}[/#62A0EA] (Ext4)\n"
-        f"[bold white]System Hostname:[/bold white] [#62A0EA]{hostname}[/#62A0EA]\n"
-        f"[bold white]Admin User:[/bold white] [#62A0EA]{username}[/#62A0EA]\n"
-        f"[bold white]Timezone:[/bold white] [#62A0EA]{timezone}[/#62A0EA]",
-        title="[bold yellow]Confirm Installation Configuration[/bold yellow]",
-        border_style="yellow"
-    ))
-
-    if not Confirm.ask("[bold red]Are you sure you want to proceed with disk partitioning & formatting?[/bold red]", default=False):
-        console.print("[yellow]Installation aborted by user.[/yellow]")
-        sys.exit(0)
-
-    steps = [
-        ("Creating GPT Partition Table", ["parted", "-s", target_disk, "mklabel", "gpt"]),
-        ("Creating EFI System Partition (512MB)", ["parted", "-s", target_disk, "mkpart", "ESP", "fat32", "1MiB", "513MiB"]),
-        ("Setting EFI Boot Flag", ["parted", "-s", target_disk, "set", "1", "esp", "on"]),
-        ("Creating Ext4 Root Partition", ["parted", "-s", target_disk, "mkpart", "primary", "ext4", "513MiB", "100%"]),
-        ("Formatting EFI Partition FAT32", ["mkfs.vfat", "-F32", efi_part]),
-        ("Formatting Root Partition Ext4", ["mkfs.ext4", "-F", root_part]),
-        ("Creating Target Mount Directories", ["mkdir", "-p", "/mnt/target"]),
-        ("Mounting Root Partition", ["mount", root_part, "/mnt/target"]),
-        ("Creating EFI Mount Point", ["mkdir", "-p", "/mnt/target/boot/efi"]),
-        ("Mounting EFI Partition", ["mount", efi_part, "/mnt/target/boot/efi"]),
-        ("Copying Live Filesystem to Target Disk", ["rsync", "-aAXv", "--exclude=/proc", "--exclude=/sys", "--exclude=/dev", "--exclude=/pts", "--exclude=/mnt", "--exclude=/tmp", "--exclude=/run", "/", "/mnt/target"]),
-        ("Installing GRUB EFI Bootloader", ["chroot", "/mnt/target", "grub-install", "--target=x86_64-efi", "--efi-directory=/boot/efi", "--bootloader-id=EclipseOS", "--recheck"]),
-        ("Generating GRUB Configuration", ["chroot", "/mnt/target", "update-grub"]),
-        ("Unmounting Target File Systems", ["umount", "-R", "/mnt/target"])
-    ]
-
-    console.print("\n[bold #62A0EA]Starting Eclipse OS Disk Installation...[/bold #62A0EA]\n")
-
-    with Progress(
-        SpinnerColumn(style="#62A0EA"),
-        TextColumn("[bold white]{task.description}[/bold white]"),
-        BarColumn(bar_width=35, complete_style="#3584E4", finished_style="#62A0EA"),
-        console=console
-    ) as progress:
-        install_task = progress.add_task("Installing OS", total=len(steps))
-
-        for desc, cmd in steps:
-            progress.update(install_task, description=desc)
-            success = run_command(cmd, dry_run=args.dry_run, ignore_error=args.dry_run)
-            if not success and not args.dry_run:
-                console.print(f"\n[bold red]Installation halted during step:[/bold red] {desc}")
-                sys.exit(1)
-            time.sleep(0.1)
-            progress.advance(install_task)
-
-    console.print()
-    console.print(Panel(
-        "[bold green]✓ Eclipse OS v1.0 Syzygy installed successfully![/bold green]\n\n"
-        "[white]You may now reboot your system and remove the installation medium.[/white]",
-        title="[bold #62A0EA]Installation Complete[/bold #62A0EA]",
-        border_style="#1C71D8"
-    ))
+    app = QApplication(sys.argv)
+    app.setStyle("Fusion")
+    
+    font = app.font()
+    font.setFamily("sans-serif")
+    app.setFont(font)
+    
+    w = InstallerApp()
+    w.show()
+    sys.exit(app.exec_())
 
 if __name__ == "__main__":
     main()
