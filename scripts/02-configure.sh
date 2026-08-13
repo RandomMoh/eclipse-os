@@ -315,6 +315,10 @@ cat <<'EOF' > "$ROOTFS/etc/initramfs-tools/conf.d/plymouth"
 FRAMEBUFFER=y
 EOF
 
+cat <<'EOF' > "$ROOTFS/etc/initramfs-tools/conf.d/live.conf"
+BOOT=live
+EOF
+
 chroot "$ROOTFS" plymouth-set-default-theme eclipse-splash -R 2>/dev/null || true
 chroot "$ROOTFS" update-initramfs -u -k all 2>/dev/null || true
 
