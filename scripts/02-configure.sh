@@ -78,7 +78,11 @@ echo -e "${YELLOW}[*] Installing backports kernel for modern hardware support...
 chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y -t bookworm-backports --no-install-recommends \
     linux-image-amd64 \
     firmware-amd-graphics \
-    firmware-linux
+    firmware-linux \
+    firmware-misc-nonfree \
+    firmware-iwlwifi \
+    firmware-realtek \
+    firmware-atheros
 
 echo -e "${YELLOW}[*] Installing required packages inside chroot...${RESET}"
 chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -90,10 +94,6 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
     xserver-xorg \
     xserver-xorg-video-all \
     xserver-xorg-input-all \
-    firmware-misc-nonfree \
-    firmware-iwlwifi \
-    firmware-realtek \
-    firmware-atheros \
     gpgv \
     bluez \
     bluez-tools \
