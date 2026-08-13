@@ -18,10 +18,17 @@ fi
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ROOTFS="${PROJECT_ROOT}/build/rootfs"
 
-# Validate that ROOTFS exists and contains a valid Linux root hierarchy
+# Validate that ROOTFS exists and contains a valid Linux root hierarchy with KDE Plasma installed
 if [[ ! -d "$ROOTFS" ]] || [[ ! -d "$ROOTFS/boot" ]] || [[ ! -d "$ROOTFS/etc" ]]; then
     echo -e "${RED}Error: Valid rootfs directory not found at ${ROOTFS}${RESET}" >&2
     echo -e "${YELLOW}Please run scripts/01-bootstrap.sh and scripts/02-configure.sh first.${RESET}" >&2
+    exit 1
+fi
+
+if [[ ! -f "$ROOTFS/usr/bin/plasmashell" ]] || [[ ! -f "$ROOTFS/usr/bin/sddm" ]]; then
+    echo -e "${RED}Error: KDE Plasma Desktop Environment is NOT installed in ${ROOTFS}!${RESET}" >&2
+    echo -e "${RED}The 02-configure.sh package installation step failed or was aborted prematurely.${RESET}" >&2
+    echo -e "${YELLOW}Please inspect the output of scripts/02-configure.sh and resolve any package errors.${RESET}" >&2
     exit 1
 fi
 

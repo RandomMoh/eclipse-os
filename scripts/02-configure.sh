@@ -89,7 +89,7 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y -t bookwo
     firmware-atheros
 
 echo -e "${YELLOW}[*] Installing required packages inside chroot...${RESET}"
-chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y -t bookworm-backports --no-install-recommends \
     live-boot \
     live-config \
     systemd-sysv \
