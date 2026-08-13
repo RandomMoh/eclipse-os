@@ -322,17 +322,29 @@ cat <<'EOF' > "$ROOTFS/etc/initramfs-tools/conf.d/live.conf"
 BOOT=live
 EOF
 
-echo -e "${BLUE}[+] Synchronizing modern AMDGPU firmware binaries into rootfs...${RESET}"
-mkdir -p "$ROOTFS/lib/firmware/amdgpu"
-for f in /lib/firmware/amdgpu/*.zst; do
-    if [ -f "$f" ]; then
-        base="$(basename "$f" .zst)"
-        zstd -d -c "$f" > "$ROOTFS/lib/firmware/amdgpu/$base" 2>/dev/null || true
-    fi
+echo -e "${BLUE}[+] Synchronizing modern hardware firmware binaries (GPU & Wi-Fi) into rootfs...${RESET}"
+for fw_dir in amdgpu i915 intel nvidia mediatek rtw89; do
+    mkdir -p "$ROOTFS/lib/firmware/$fw_dir"
+    for f in /lib/firmware/$fw_dir/*.zst; do
+        if [ -f "$f" ]; then
+            base="$(basename "$f" .zst)"
+            zstd -d -c < "$f" > "$ROOTFS/lib/firmware/$fw_dir/$base" 2>/dev/null || true
+        fi
+    done
+    for f in /lib/firmware/$fw_dir/*; do
+        if [ -f "$f" ] && [[ "$f" != *.zst ]]; then
+            cp "$f" "$ROOTFS/lib/firmware/$fw_dir/" 2>/dev/null || true
+        fi
+    done
 done
-for f in /lib/firmware/amdgpu/*; do
-    if [ -f "$f" ] && [[ "$f" != *.zst ]]; then
-        cp "$f" "$ROOTFS/lib/firmware/amdgpu/" 2>/dev/null || true
+
+# Sync top-level Intel iwlwifi and Realtek binaries
+for f in /lib/firmware/iwlwifi-*.zst /lib/firmware/rtlwifi/*.zst; do
+    if [ -f "$f" ]; then
+        dir="$(dirname "$f")"
+        base="$(basename "$f" .zst)"
+        mkdir -p "$ROOTFS$dir"
+        zstd -d -c < "$f" > "$ROOTFS$dir/$base" 2>/dev/null || true
     fi
 done
 
