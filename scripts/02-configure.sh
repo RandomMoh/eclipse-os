@@ -59,6 +59,7 @@ cat <<'EOF' > "$ROOTFS/etc/apt/sources.list"
 deb http://deb.debian.org/debian/ bookworm main contrib non-free non-free-firmware
 deb http://deb.debian.org/debian/ bookworm-updates main contrib non-free non-free-firmware
 deb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware
+deb http://deb.debian.org/debian/ bookworm-backports main contrib non-free non-free-firmware
 EOF
 
 echo -e "${YELLOW}[*] Updating APT package lists inside chroot...${RESET}"
@@ -73,9 +74,14 @@ chroot "$ROOTFS" bash -c "
   apt-get update
 "
 
+echo -e "${YELLOW}[*] Installing backports kernel for modern hardware support...${RESET}"
+chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y -t bookworm-backports --no-install-recommends \
+    linux-image-amd64 \
+    firmware-amd-graphics \
+    firmware-linux
+
 echo -e "${YELLOW}[*] Installing required packages inside chroot...${RESET}"
 chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    linux-image-amd64 \
     live-boot \
     live-config \
     systemd-sysv \
@@ -84,8 +90,6 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
     xserver-xorg \
     xserver-xorg-video-all \
     xserver-xorg-input-all \
-    firmware-linux \
-    firmware-amd-graphics \
     firmware-misc-nonfree \
     firmware-iwlwifi \
     firmware-realtek \
@@ -127,6 +131,8 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
     python3 \
     python3-pip \
     python3-rich \
+    python3-pyqt5 \
+    python3-pyqt5.qtwebengine \
     rsync \
     parted \
     dosfstools \
