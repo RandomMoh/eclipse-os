@@ -437,9 +437,7 @@ if [[ -d "$ROOTFS/home/eclipse" ]]; then
 fi
 
 # KDE PIM daemons consume background resources even when unused. Removing them, along with games and help documentation, keeps the RAM footprint under 1GB.
-echo -e "${YELLOW}[*] Purging KDE Plasma bloatware packages from rootfs...${RESET}"
-chroot "$ROOTFS" apt-get purge -y akonadi-server kmail korganizer kaddressbook pim-data-exporter khelpcenter kmahjongg kpat ksudoku dragonplayer juk elisa sweeper 2>/dev/null || true
-chroot "$ROOTFS" apt-get autoremove -y --purge 2>/dev/null || true
+echo -e "${YELLOW}[*] Bypassing aggressive KDE purge to prevent metapackage removal...${RESET}"
 
 # Write sudoers file for eclipse user
 mkdir -p "$ROOTFS/etc/sudoers.d"
