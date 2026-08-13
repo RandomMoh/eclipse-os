@@ -62,14 +62,18 @@ deb http://security.debian.org/debian-security bookworm-security main contrib no
 deb http://deb.debian.org/debian/ bookworm-backports main contrib non-free non-free-firmware
 EOF
 
+echo -e "${BLUE}[+] Forcing reliable DNS inside chroot...${RESET}"
+rm -f "$ROOTFS/etc/resolv.conf"
+echo "nameserver 8.8.8.8" > "$ROOTFS/etc/resolv.conf"
+
 echo -e "${YELLOW}[*] Updating APT package lists inside chroot...${RESET}"
 chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get update
 
 # Add Microsoft VS Code repository
-chroot "$ROOTFS" bash -c "
+chroot "$ROOTFS" bash -c "set -e
   apt-get install -y --no-install-recommends curl gpg ca-certificates apt-transport-https
   mkdir -p /etc/apt/keyrings
-  curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --yes --dearmor -o /etc/apt/keyrings/packages.microsoft.gpg
+  curl -fsSL -4 https://packages.microsoft.com/keys/microsoft.asc | gpg --yes --dearmor -o /etc/apt/keyrings/packages.microsoft.gpg
   echo 'deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main' > /etc/apt/sources.list.d/vscode.list
   apt-get update
 "
@@ -464,5 +468,9 @@ echo -e "${YELLOW}[*] Cleaning up package cache inside rootfs...${RESET}"
 chroot "$ROOTFS" apt-get clean
 rm -rf "$ROOTFS/var/lib/apt/lists/"*
 rm -rf "$ROOTFS/var/cache/apt/archives/"*.deb
+
+echo -e "${BLUE}[+] Restoring default systemd-resolved DNS stub...${RESET}"
+rm -f "$ROOTFS/etc/resolv.conf"
+ln -sf /run/systemd/resolve/stub-resolv.conf "$ROOTFS/etc/resolv.conf"
 
 echo -e "${GREEN}[+] System configuration and provisioning completed successfully!${RESET}"
