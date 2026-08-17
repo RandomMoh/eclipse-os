@@ -385,13 +385,14 @@ chmod +x "$ROOTFS/usr/local/bin/eclipse-sysinfo" "$ROOTFS/usr/local/bin/eclipse-
 mkdir -p "$ROOTFS/etc/xdg/autostart" "$ROOTFS/etc/skel/.config/autostart"
 cp "$PROJECT_ROOT/config/autostart/eclipse-dock.desktop" "$ROOTFS/etc/xdg/autostart/"
 cp "$PROJECT_ROOT/config/autostart/eclipse-dock.desktop" "$ROOTFS/etc/skel/.config/autostart/"
-# Provision KDE Plasma default settings for skeleton and eclipse user
-mkdir -p "$ROOTFS/etc/skel/.config" "$ROOTFS/etc/xdg"
+# Provision KDE Plasma default settings and native layout script for top/bottom panels
+mkdir -p "$ROOTFS/etc/skel/.config" "$ROOTFS/etc/xdg" "$ROOTFS/usr/share/plasma/shells/org.kde.plasma.desktop/contents"
 cp -f "$PROJECT_ROOT/config/kde/kdeglobals" "$ROOTFS/etc/skel/.config/kdeglobals"
 cp -f "$PROJECT_ROOT/config/kde/kdeglobals" "$ROOTFS/etc/xdg/kdeglobals"
 cp -f "$PROJECT_ROOT/config/kde/plasmarc" "$ROOTFS/etc/skel/.config/plasmarc"
 cp -f "$PROJECT_ROOT/config/kde/kwinrc" "$ROOTFS/etc/skel/.config/kwinrc"
-cp -f "$PROJECT_ROOT/config/kde/plasma-org.kde.plasma.desktop-appletsrc" "$ROOTFS/etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc"
+cp -f "$PROJECT_ROOT/config/kde/layout.js" "$ROOTFS/usr/share/plasma/shells/org.kde.plasma.desktop/contents/layout.js"
+rm -f "$ROOTFS/etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc" "$ROOTFS/etc/xdg/plasma-org.kde.plasma.desktop-appletsrc" 2>/dev/null || true
 
 # Create desktop launchers for Eclipse Utilities
 mkdir -p "$ROOTFS/usr/share/applications"
@@ -439,7 +440,7 @@ if [[ -d "$ROOTFS/home/eclipse" ]]; then
     cp -f "$PROJECT_ROOT/config/kde/kdeglobals" "$ROOTFS/home/eclipse/.config/kdeglobals"
     cp -f "$PROJECT_ROOT/config/kde/plasmarc" "$ROOTFS/home/eclipse/.config/plasmarc"
     cp -f "$PROJECT_ROOT/config/kde/kwinrc" "$ROOTFS/home/eclipse/.config/kwinrc"
-    cp -f "$PROJECT_ROOT/config/kde/plasma-org.kde.plasma.desktop-appletsrc" "$ROOTFS/home/eclipse/.config/plasma-org.kde.plasma.desktop-appletsrc"
+    rm -f "$ROOTFS/home/eclipse/.config/plasma-org.kde.plasma.desktop-appletsrc" 2>/dev/null || true
     cp -r "$ROOTFS/etc/skel/Desktop/"* "$ROOTFS/home/eclipse/Desktop/" 2>/dev/null || true
     chmod +x "$ROOTFS/home/eclipse/Desktop/"*.desktop 2>/dev/null || true
     chroot "$ROOTFS" chown -R eclipse:eclipse /home/eclipse
