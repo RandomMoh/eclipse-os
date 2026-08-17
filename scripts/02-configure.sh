@@ -488,7 +488,8 @@ chroot "$ROOTFS" bash -c "rm -f /etc/systemd/system/display-manager.service && s
 echo -e "${BLUE}[+] Enabling SDDM display manager and graphical default target...${RESET}"
 chroot "$ROOTFS" systemctl set-default graphical.target
 chroot "$ROOTFS" systemctl enable sddm 2>/dev/null || true
-chroot "$ROOTFS" systemctl disable podman-restart podman-auto-update 2>/dev/null || true
+chroot "$ROOTFS" systemctl mask NetworkManager-wait-online.service systemd-networkd-wait-online.service systemd-time-wait-sync.service 2>/dev/null || true
+chroot "$ROOTFS" systemctl disable apache2 mariadb podman-restart podman-auto-update 2>/dev/null || true
 
 echo -e "${YELLOW}[*] Cleaning up package cache inside rootfs...${RESET}"
 chroot "$ROOTFS" apt-get clean
