@@ -399,7 +399,7 @@ cp -f "$PROJECT_ROOT/config/kde/kdeglobals" "$ROOTFS/etc/skel/.config/kdeglobals
 cp -f "$PROJECT_ROOT/config/kde/kdeglobals" "$ROOTFS/etc/xdg/kdeglobals"
 cp -f "$PROJECT_ROOT/config/kde/plasmarc" "$ROOTFS/etc/skel/.config/plasmarc"
 cp -f "$PROJECT_ROOT/config/kde/kwinrc" "$ROOTFS/etc/skel/.config/kwinrc"
-cp -f "$PROJECT_ROOT/config/kde/layout.js" "$ROOTFS/usr/share/plasma/shells/org.kde.plasma.desktop/contents/layout.js"
+cp -f "$PROJECT_ROOT/config/kde/shell-layout.js" "$ROOTFS/usr/share/plasma/shells/org.kde.plasma.desktop/contents/layout.js"
 cp -f "$PROJECT_ROOT/config/kde/layout.js" "$ROOTFS/usr/share/plasma/layout-templates/org.kde.plasma.desktop.defaultPanel/contents/layout.js"
 rm -f "$ROOTFS/etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc" "$ROOTFS/etc/xdg/plasma-org.kde.plasma.desktop-appletsrc" 2>/dev/null || true
 
