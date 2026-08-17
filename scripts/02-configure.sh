@@ -359,7 +359,7 @@ for f in /lib/firmware/iwlwifi-*.zst /lib/firmware/rtlwifi/*.zst; do
     fi
 done
 
-chroot "$ROOTFS" plymouth-set-default-theme eclipse-splash -R 2>/dev/null || true
+chroot "$ROOTFS" plymouth-set-default-theme eclipse-splash 2>/dev/null || true
 chroot "$ROOTFS" update-initramfs -u -k all 2>/dev/null || true
 
 echo -e "${BLUE}[+] Provisioning native Python utilities, dnf CLI, and custom dock...${RESET}"
@@ -386,12 +386,13 @@ mkdir -p "$ROOTFS/etc/xdg/autostart" "$ROOTFS/etc/skel/.config/autostart"
 cp "$PROJECT_ROOT/config/autostart/eclipse-dock.desktop" "$ROOTFS/etc/xdg/autostart/"
 cp "$PROJECT_ROOT/config/autostart/eclipse-dock.desktop" "$ROOTFS/etc/skel/.config/autostart/"
 # Provision KDE Plasma default settings and native layout script for top/bottom panels
-mkdir -p "$ROOTFS/etc/skel/.config" "$ROOTFS/etc/xdg" "$ROOTFS/usr/share/plasma/shells/org.kde.plasma.desktop/contents"
+mkdir -p "$ROOTFS/etc/skel/.config" "$ROOTFS/etc/xdg" "$ROOTFS/usr/share/plasma/shells/org.kde.plasma.desktop/contents" "$ROOTFS/usr/share/plasma/layout-templates/org.kde.plasma.desktop.defaultPanel/contents"
 cp -f "$PROJECT_ROOT/config/kde/kdeglobals" "$ROOTFS/etc/skel/.config/kdeglobals"
 cp -f "$PROJECT_ROOT/config/kde/kdeglobals" "$ROOTFS/etc/xdg/kdeglobals"
 cp -f "$PROJECT_ROOT/config/kde/plasmarc" "$ROOTFS/etc/skel/.config/plasmarc"
 cp -f "$PROJECT_ROOT/config/kde/kwinrc" "$ROOTFS/etc/skel/.config/kwinrc"
 cp -f "$PROJECT_ROOT/config/kde/layout.js" "$ROOTFS/usr/share/plasma/shells/org.kde.plasma.desktop/contents/layout.js"
+cp -f "$PROJECT_ROOT/config/kde/layout.js" "$ROOTFS/usr/share/plasma/layout-templates/org.kde.plasma.desktop.defaultPanel/contents/layout.js"
 rm -f "$ROOTFS/etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc" "$ROOTFS/etc/xdg/plasma-org.kde.plasma.desktop-appletsrc" 2>/dev/null || true
 
 # Create desktop launchers for Eclipse Utilities

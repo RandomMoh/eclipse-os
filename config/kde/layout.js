@@ -1,7 +1,7 @@
-// Eclipse OS KDE Plasma Default Layout: Top Status Bar + Bottom Taskbar/Dock
+// Eclipse OS Two-Panel Layout: Top Status Bar + Bottom Taskbar/Dock
 
-// 1. Top Status Bar
-var topPanel = new Panel;
+// 1. TOP STATUS BAR (Clock, System Tray, Menu)
+var topPanel = new Panel("org.kde.plasma.panel");
 topPanel.location = "top";
 topPanel.height = 32;
 
@@ -13,10 +13,11 @@ topPanel.addWidget("org.kde.plasma.marginsseparator");
 topPanel.addWidget("org.kde.plasma.systemtray");
 topPanel.addWidget("org.kde.plasma.digitalclock");
 
-// 2. Bottom Taskbar / App Dock
-var bottomPanel = new Panel;
+// 2. BOTTOM DOCK / TASKBAR (Pinned Apps + Running Windows)
+var bottomPanel = new Panel("org.kde.plasma.panel");
 bottomPanel.location = "bottom";
 bottomPanel.height = 48;
+bottomPanel.alignment = "center";
 
 var icontasks = bottomPanel.addWidget("org.kde.plasma.icontasks");
 icontasks.currentConfigGroup = ["General"];
@@ -33,7 +34,7 @@ icontasks.writeConfig("launchers", [
 
 bottomPanel.addWidget("org.kde.plasma.showdesktop");
 
-// 3. Desktop Wallpaper & Settings
+// 3. DESKTOP WALLPAPER CONFIGURATION
 var desktopsArray = desktopsForActivity(currentActivity());
 for (var j = 0; j < desktopsArray.length; j++) {
     desktopsArray[j].wallpaperPlugin = 'org.kde.image';
