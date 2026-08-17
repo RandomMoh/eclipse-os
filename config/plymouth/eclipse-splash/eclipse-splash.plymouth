@@ -1,8 +1,24 @@
 [Plymouth Theme]
 Name=Eclipse OS Boot Splash
-Description=Graphical boot splash logo for Eclipse OS
-ModuleName=script
+Description=High-resolution graphical boot splash logo for Eclipse OS
+ModuleName=two-step
 
-[script]
+[two-step]
 ImageDir=/usr/share/plymouth/themes/eclipse-splash
-ScriptFile=/usr/share/plymouth/themes/eclipse-splash/eclipse-splash.script
+HorizontalAlignment=.5
+VerticalAlignment=.5
+WatermarkHorizontalAlignment=.5
+WatermarkVerticalAlignment=.5
+Transition=none
+TransitionDuration=0.0
+BackgroundStartColor=0x0a0809
+BackgroundEndColor=0x0a0809
+
+[boot-up]
+UseEndAnimation=false
+
+[shutdown]
+UseEndAnimation=false
+
+[reboot]
+UseEndAnimation=false

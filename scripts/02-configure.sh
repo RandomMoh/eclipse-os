@@ -329,6 +329,14 @@ cat <<'EOF' > "$ROOTFS/etc/initramfs-tools/conf.d/plymouth"
 FRAMEBUFFER=y
 EOF
 
+cat <<'EOF' > "$ROOTFS/etc/initramfs-tools/modules"
+amdgpu
+i915
+virtio_gpu
+bochs
+qxl
+EOF
+
 cat <<'EOF' > "$ROOTFS/etc/initramfs-tools/conf.d/live.conf"
 BOOT=live
 EOF
