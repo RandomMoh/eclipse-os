@@ -38,10 +38,11 @@ trap cleanup EXIT INT TERM
 
 echo -e "${BLUE}[+] Mounting virtual filesystems into rootfs...${RESET}"
 mkdir -p "$ROOTFS/proc" "$ROOTFS/sys" "$ROOTFS/dev" "$ROOTFS/dev/pts"
-mount --bind /proc "$ROOTFS/proc"
-mount --bind /sys "$ROOTFS/sys"
-mount -t devtmpfs devtmpfs "$ROOTFS/dev" 2>/dev/null || mount --bind /dev "$ROOTFS/dev"
-mount -t devpts devpts "$ROOTFS/dev/pts" 2>/dev/null || mount --bind /dev/pts "$ROOTFS/dev/pts"
+mount -t proc proc "$ROOTFS/proc" 2>/dev/null || mount --bind /proc "$ROOTFS/proc"
+mount -t sysfs sysfs "$ROOTFS/sys" 2>/dev/null || mount --bind /sys "$ROOTFS/sys"
+mount -t devtmpfs devtmpfs "$ROOTFS/dev" 2>/dev/null || mount -t tmpfs tmpfs "$ROOTFS/dev"
+mkdir -p "$ROOTFS/dev/pts" "$ROOTFS/dev/shm"
+mount -t devpts devpts "$ROOTFS/dev/pts" 2>/dev/null || true
 
 echo -e "${BLUE}[+] Writing hostname, hosts, and APT sources.list...${RESET}"
 echo "eclipse-os" > "$ROOTFS/etc/hostname"
@@ -298,8 +299,8 @@ cp "$PROJECT_ROOT/config/wallpaper/eclipse-wallpaper.png" "$ROOTFS/usr/share/wal
 
 # live-config injects unwanted configuration for desktop-base and lightdm. Disabling these overrides ensures the KDE environment boots cleanly without interference.
 rm -rf "$ROOTFS/etc/lightdm" "$ROOTFS/etc/xdg/xfce4" 2>/dev/null || true
-rm -f "$ROOTFS/lib/live/config/0000-desktop-base" "$ROOTFS/lib/live/config/0100-lightdm" "$ROOTFS/lib/live/config/1160-xfce4-desktop" "$ROOTFS/lib/live/config/1170-xfce4-panel" 2>/dev/null || true
-rm -f "$ROOTFS/usr/lib/live/config/0000-desktop-base" "$ROOTFS/usr/lib/live/config/0100-lightdm" "$ROOTFS/usr/lib/live/config/1160-xfce4-desktop" "$ROOTFS/usr/lib/live/config/1170-xfce4-panel" 2>/dev/null || true
+rm -f "$ROOTFS/lib/live/config/0000-desktop-base" "$ROOTFS/lib/live/config/0100-lightdm" "$ROOTFS/lib/live/config/0085-sddm" "$ROOTFS/lib/live/config/1160-xfce4-desktop" "$ROOTFS/lib/live/config/1170-xfce4-panel" 2>/dev/null || true
+rm -f "$ROOTFS/usr/lib/live/config/0000-desktop-base" "$ROOTFS/usr/lib/live/config/0100-lightdm" "$ROOTFS/usr/lib/live/config/0085-sddm" "$ROOTFS/usr/lib/live/config/1160-xfce4-desktop" "$ROOTFS/usr/lib/live/config/1170-xfce4-panel" 2>/dev/null || true
 
 # Set Dolphin as default file manager & Zen Browser as default web browser in skel
 mkdir -p "$ROOTFS/etc/skel/.config"
@@ -458,6 +459,7 @@ rm -f "$ROOTFS/usr/share/xsessions/xfce.desktop" "$ROOTFS/usr/share/xsessions/li
 # Configure SDDM explicitly to launch Plasma X11 and set default session
 echo -e "${BLUE}[+] Configuring SDDM and default X11 session manager...${RESET}"
 mkdir -p "$ROOTFS/etc" "$ROOTFS/etc/sddm.conf.d"
+rm -f "$ROOTFS/etc/sddm.conf.d/autologin.conf" 2>/dev/null || true
 cp -f "$PROJECT_ROOT/config/kde/sddm.conf" "$ROOTFS/etc/sddm.conf"
 cp -f "$PROJECT_ROOT/config/kde/.dmrc" "$ROOTFS/etc/skel/.dmrc"
 if [[ -d "$ROOTFS/home/eclipse" ]]; then

@@ -45,10 +45,13 @@ mkdir -p "$ISO_STAGING/EFI/BOOT"
 mkdir -p "$OUTPUT_DIR"
 
 # Compressing the rootfs with mounted virtual filesystems (like /proc and /dev) will cause mksquashfs to package dynamic kernel structures and hang the build. They must be unmounted first.
-umount -l "$ROOTFS/dev/pts" "$ROOTFS/dev" "$ROOTFS/proc" "$ROOTFS/sys" 2>/dev/null || true
+umount -l "$ROOTFS/dev/pts" 2>/dev/null || true
+umount -l "$ROOTFS/dev" 2>/dev/null || true
+umount -l "$ROOTFS/proc" 2>/dev/null || true
+umount -l "$ROOTFS/sys" 2>/dev/null || true
 
 # live-boot expects /proc, /sys, /dev, and /run to exist as empty directories in the squashfs so it can mount them during the boot sequence.
-rm -rf "$ROOTFS/proc/"* "$ROOTFS/sys/"* "$ROOTFS/dev/"* "$ROOTFS/run/"* "$ROOTFS/tmp/"* 2>/dev/null || true
+rm -rf "$ROOTFS/proc" "$ROOTFS/sys" "$ROOTFS/run/"* "$ROOTFS/tmp/"* 2>/dev/null || true
 mkdir -p "$ROOTFS/proc" "$ROOTFS/sys" "$ROOTFS/dev" "$ROOTFS/run" "$ROOTFS/tmp"
 chmod 1777 "$ROOTFS/tmp"
 
