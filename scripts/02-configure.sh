@@ -468,9 +468,10 @@ rm -f "$ROOTFS/usr/share/xsessions/xfce.desktop" "$ROOTFS/usr/share/xsessions/li
 
 # Configure SDDM explicitly to launch Plasma X11 and set default session
 echo -e "${BLUE}[+] Configuring SDDM and default X11 session manager...${RESET}"
-mkdir -p "$ROOTFS/etc" "$ROOTFS/etc/sddm.conf.d"
+mkdir -p "$ROOTFS/etc" "$ROOTFS/etc/sddm.conf.d" "$ROOTFS/etc/systemd/system/sddm.service.d"
 rm -f "$ROOTFS/etc/sddm.conf.d/autologin.conf" 2>/dev/null || true
 cp -f "$PROJECT_ROOT/config/kde/sddm.conf" "$ROOTFS/etc/sddm.conf"
+cp -f "$PROJECT_ROOT/config/kde/sddm-override.conf" "$ROOTFS/etc/systemd/system/sddm.service.d/override.conf"
 cp -f "$PROJECT_ROOT/config/kde/.dmrc" "$ROOTFS/etc/skel/.dmrc"
 if [[ -d "$ROOTFS/home/eclipse" ]]; then
     cp -f "$PROJECT_ROOT/config/kde/.dmrc" "$ROOTFS/home/eclipse/.dmrc"
