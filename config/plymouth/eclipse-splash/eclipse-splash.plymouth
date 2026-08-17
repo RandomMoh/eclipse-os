@@ -6,13 +6,16 @@ ModuleName=two-step
 [two-step]
 ImageDir=/usr/share/plymouth/themes/eclipse-splash
 HorizontalAlignment=.5
-VerticalAlignment=.5
+VerticalAlignment=.62
 WatermarkHorizontalAlignment=.5
-WatermarkVerticalAlignment=.5
+WatermarkVerticalAlignment=.42
 Transition=none
 TransitionDuration=0.0
 BackgroundStartColor=0x0a0809
 BackgroundEndColor=0x0a0809
+ProgressBarBackgroundColor=0x1a1114
+ProgressBarForegroundColor=0xe11d48
+MessageBelowAnimation=true
 
 [boot-up]
 UseEndAnimation=false
